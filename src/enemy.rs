@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     assets::{SoundAssets, SpriteAssets},
     tilemap::tile_to_pos,
-    GameState, SCALE,
+    GameState, PlaySet, SCALE,
 };
 
 // ······
@@ -15,13 +15,10 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<DamageEvent>()
-            .add_systems(
-                OnEnter(GameState::Play),
-                init.run_if(run_once()),
-            )
+            .add_systems(OnEnter(GameState::Play), init)
             .add_systems(
                 Update,
-                on_damage.run_if(in_state(GameState::Play)),
+                on_damage.in_set(PlaySet::Events),
             );
     }
 }
@@ -69,6 +66,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
                 pos: UVec2::new(x, y),
                 health: 2,
             },
+            StateScoped(GameState::Play),
         ));
     }
 }

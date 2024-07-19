@@ -25,14 +25,14 @@ release = [ # Only in release (build with --release --no-default-features --feat
   "bevy_embedded_assets",
   "common",
   "loading",
+  "menu",
   "tts",
 ]
-common = ["input", "navigation", "persist", "pixel_perfect", "ui"]
+common = ["input", "persist", "pixel_perfect", "ui"]
 
 input = ["leafwing-input-manager"]
 loading = ["ui"]
-menu = ["input", "navigation", "ui"]
-navigation = ["bevy-alt-ui-navigation-lite", "ui"]
+menu = ["bevy-alt-ui-navigation-lite", "input", "ui"]
 persist = ["bevy-persistent"]
 pixel_perfect = []
 resizable = []

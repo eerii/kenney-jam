@@ -9,8 +9,6 @@ use crate::{camera::FinalCamera, GameState};
 pub mod loading;
 #[cfg(feature = "menu")]
 pub mod menu;
-#[cfg(feature = "navigation")]
-pub mod navigation;
 #[cfg(feature = "tts")]
 pub mod tts;
 pub mod widgets;
@@ -33,9 +31,6 @@ impl Plugin for UiPlugin {
 
         #[cfg(feature = "menu")]
         app.add_plugins(menu::MenuPlugin);
-
-        #[cfg(feature = "navigation")]
-        app.add_plugins(navigation::NavigationPlugin);
 
         #[cfg(feature = "tts")]
         app.add_plugins(tts::SpeechPlugin);

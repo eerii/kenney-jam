@@ -5,8 +5,8 @@ use crate::{
     enemy::{DamageEvent, Enemy},
     input::{Action, ActionState},
     misc::{Direction, MoveTo},
-    tilemap::{tile_to_pos, Tile, TileType, Tilemap},
-    GameState, SCALE,
+    tilemap::{tile_to_pos, NextLevelEvent, Tile, TileType, Tilemap},
+    GameState, PlaySet, SCALE,
 };
 
 // ······
@@ -17,13 +17,9 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(GameState::Play),
-            init.run_if(run_once()),
-        )
-        .add_systems(
+        app.add_systems(OnEnter(GameState::Play), init).add_systems(
             Update,
-            move_player.run_if(in_state(GameState::Play)),
+            move_player.in_set(PlaySet::Move),
         );
     }
 }
@@ -55,6 +51,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
         Player {
             pos: UVec2::new(5, 3),
         },
+        StateScoped(GameState::Play), // Every time the level changes this entity is destroyed
     ));
 }
 
@@ -66,6 +63,7 @@ fn move_player(
     tiles: Query<&Tile>,
     tilemap: Res<Tilemap>,
     mut damage_writer: EventWriter<DamageEvent>,
+    mut next_level_writer: EventWriter<NextLevelEvent>,
 ) {
     let Ok((entity, mut player)) = player.get_single_mut() else { return };
     let Ok(input) = input.get_single() else { return };
@@ -106,6 +104,10 @@ fn move_player(
     if !is_collision {
         let Some(tile) = tilemap.get_tile(x, y) else { return };
         let Ok(tile) = tiles.get(tile) else { return };
+        if let TileType::Ladder = tile.tile {
+            next_level_writer.send(NextLevelEvent);
+            return;
+        }
         is_collision = matches!(tile.tile, TileType::Collision);
     };
 

@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use bevy::prelude::*;
 
-use crate::{tilemap::TILE_SEP, GameState};
+use crate::{tilemap::TILE_SEP, PlaySet};
 
 // ······
 // Plugin
@@ -14,7 +14,7 @@ impl Plugin for MiscPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            move_to.run_if(in_state(GameState::Play)),
+            move_to.in_set(PlaySet::Animation),
         );
     }
 }
@@ -53,7 +53,7 @@ impl MoveTo {
 // Systems
 // ·······
 
-pub fn move_to(
+fn move_to(
     mut cmd: Commands,
     time: Res<Time>,
     mut movables: Query<(Entity, &mut MoveTo, &mut Transform)>,

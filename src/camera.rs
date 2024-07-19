@@ -4,9 +4,8 @@ use bevy::prelude::*;
 
 use crate::{
     data::{init_data, GameOptions, Persistent},
-    misc::move_to,
     player::Player,
-    GameState,
+    GameState, PlaySet,
 };
 
 /// The luminance of the background color
@@ -29,9 +28,7 @@ impl Plugin for CameraPlugin {
         )
         .add_systems(
             Update,
-            update_camera
-                .after(move_to)
-                .run_if(in_state(GameState::Play)),
+            update_camera.after(PlaySet::Animation),
         );
     }
 }

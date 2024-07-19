@@ -6,7 +6,10 @@ use bevy_alt_ui_navigation_lite::{
 };
 use leafwing_input_manager::prelude::*;
 
-use crate::{ui::widgets::BUTTON_COLOR, GameState};
+use crate::{
+    ui::{menu::MenuState, widgets::BUTTON_COLOR},
+    GameState, PlayState,
+};
 
 // ······
 // Plugin
@@ -24,20 +27,19 @@ impl Plugin for NavigationPlugin {
             AltNavigationPlugin::new(),
             InputManagerPlugin::<UiAction>::default(),
         ))
-        .add_systems(OnExit(GameState::Startup), init)
+        .add_systems(OnExit(GameState::Startup), init);
+
+        app.add_systems(
+            PreUpdate,
+            on_mouse_move.run_if(state_changed::<MenuState>),
+        )
         .add_systems(
             Update,
-            ((
+            (
                 handle_input.before(NavRequestSystem),
                 update_focus.after(NavRequestSystem),
             )
-                .run_if(in_state(GameState::Menu)),),
-        );
-
-        #[cfg(feature = "menu")]
-        app.add_systems(
-            PreUpdate,
-            on_mouse_move.run_if(state_changed::<super::menu::MenuState>),
+                .run_if(in_state(PlayState::Menu)),
         );
     }
 }
@@ -67,7 +69,7 @@ pub(super) struct FocusableHoverFill;
 
 /// A focusable that should hightlight its children, not itself
 #[derive(Component)]
-pub(super) struct HightlightChild;
+pub(crate) struct HightlightChild;
 
 // ·······
 // Systems

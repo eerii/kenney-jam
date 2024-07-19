@@ -5,10 +5,11 @@ use bevy_alt_ui_navigation_lite::prelude::*;
 
 #[cfg(feature = "tts")]
 use crate::data::{GameOptions, Persistent};
-use crate::GameState;
+use crate::PlayState;
 
 mod main;
 mod mappings;
+pub mod navigation;
 mod options;
 
 const UI_GAP: Val = Val::Px(16.);
@@ -25,6 +26,7 @@ impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_sub_state::<MenuState>()
             .enable_state_scoped_entities::<MenuState>()
+            .add_plugins(navigation::NavigationPlugin)
             .add_systems(OnEnter(MenuState::Main), main::open)
             .add_systems(
                 OnEnter(MenuState::Options),
@@ -40,7 +42,7 @@ impl Plugin for MenuPlugin {
             )
             .add_systems(
                 Update,
-                handle_buttons.run_if(in_state(GameState::Menu)),
+                handle_buttons.run_if(in_state(PlayState::Menu)),
             );
     }
 }
@@ -48,7 +50,7 @@ impl Plugin for MenuPlugin {
 /// Menu state
 /// Useful for navigating submenus
 #[derive(SubStates, Debug, Default, Clone, Eq, PartialEq, Hash)]
-#[source(GameState = GameState::Menu)]
+#[source(PlayState = PlayState::Menu)]
 pub(super) enum MenuState {
     /// Main menu screen, allows to play or exit the game and access further
     /// options
@@ -103,7 +105,7 @@ fn handle_buttons(
     #[cfg(feature = "tts")] mut cmd: Commands,
     buttons: Query<&MenuButton>,
     #[cfg(feature = "tts")] mut options: ResMut<Persistent<GameOptions>>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_state: ResMut<NextState<PlayState>>,
     curr_menu_state: Res<State<MenuState>>,
     mut next_menu_state: ResMut<NextState<MenuState>>,
     mut nav_event_reader: EventReader<NavEvent>,
@@ -123,7 +125,7 @@ fn handle_buttons(
                 // Do something based on the button type
                 match buttons {
                     MenuButton::Play => {
-                        next_state.set(GameState::Play);
+                        next_state.set(PlayState::Play);
                     },
                     MenuButton::Options => {
                         next_menu_state.set(MenuState::Options);
@@ -158,7 +160,7 @@ fn handle_buttons(
                 from: _,
                 request: NavRequest::Cancel,
             } => match curr_menu_state.get() {
-                MenuState::Main => next_state.set(GameState::Play),
+                MenuState::Main => next_state.set(PlayState::Play),
                 MenuState::Options => next_menu_state.set(MenuState::Main),
                 MenuState::Mappings => next_menu_state.set(MenuState::Options),
                 MenuState::Refresh => {},

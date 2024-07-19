@@ -4,7 +4,7 @@ use bevy::prelude::*;
 pub use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::prelude::*;
 
-use crate::GameState;
+use crate::PlayState;
 
 // ······
 // Plugin
@@ -19,14 +19,14 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(InputManagerPlugin::<Action>::default())
             .add_systems(
-                OnEnter(if cfg!(feature = "menu") { GameState::Menu } else { GameState::Play }),
+                OnEnter(PlayState::default()),
                 init.run_if(run_once()),
             );
 
         #[cfg(feature = "menu")]
         app.add_systems(
             Update,
-            handle_input.run_if(in_state(GameState::Play)),
+            handle_input.in_set(crate::PlaySet::Tick),
         );
     }
 }
@@ -63,13 +63,10 @@ fn init(mut cmd: Commands) {
 
 /// Read the input and perform actions
 #[cfg(feature = "menu")]
-fn handle_input(
-    input: Query<&ActionState<Action>>,
-    mut next_state: ResMut<NextState<crate::GameState>>,
-) {
+fn handle_input(input: Query<&ActionState<Action>>, mut next_state: ResMut<NextState<PlayState>>) {
     let Ok(input) = input.get_single() else { return };
 
     if input.just_pressed(&Action::Pause) {
-        next_state.set(crate::GameState::Menu)
+        next_state.set(PlayState::Menu)
     }
 }

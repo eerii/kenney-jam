@@ -170,6 +170,6 @@ fn check_load_state(
 
     let (loaded, total) = loading_data.current(&asset_server);
     if loaded == total {
-        next_state.set(if cfg!(feature = "menu") { GameState::Menu } else { GameState::Play });
+        next_state.set(GameState::Play);
     }
 }
