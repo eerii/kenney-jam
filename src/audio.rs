@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{assets::ExampleAssets, GameState};
+use crate::{assets::SoundAssets, GameState};
 
 // ······
 // Plugin
@@ -39,7 +39,7 @@ struct AmbientMusic;
 /// even more complex behaviour, for example, to despawn the entity when the
 /// audio is finished
 /// CHANGE: Enable or disable background music and other sounds
-fn init(mut cmd: Commands, assets: Res<ExampleAssets>) {
+fn init(mut cmd: Commands, assets: Res<SoundAssets>) {
     cmd.spawn((
         AudioBundle {
             source: assets.ambient_music.clone(),

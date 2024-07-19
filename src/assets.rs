@@ -19,7 +19,7 @@ impl Plugin for AssetLoaderPlugin {
             .add_systems(OnEnter(GameState::Startup), load_core)
             .add_systems(
                 OnEnter(GameState::Loading),
-                load_example,
+                (load_sound, load_sprites),
             )
             .add_systems(
                 Update,
@@ -38,20 +38,23 @@ impl Plugin for AssetLoaderPlugin {
 #[derive(Resource)]
 pub struct CoreAssets {
     /// Icon of the bevy engine, used in splash screens and examples
-    /// Depending on the pixel_perfect feature it will be the original or
-    /// pixelated version
     pub bevy_icon: Handle<Image>,
     /// Default font for the text in the engine
-    /// Depending on the pixel_perfect feature it will be the original or
-    /// pixelated version
     pub font: Handle<Font>,
 }
 
-/// Example assets
+/// Sprite assets
 /// They are loaded during the loading state, showing the progress
-/// CHANGE: You can create new asset collections or add assets here
 #[derive(Resource)]
-pub struct ExampleAssets {
+pub struct SpriteAssets {
+    pub one_bit: Handle<Image>,
+    pub one_bit_atlas: Handle<TextureAtlasLayout>,
+}
+
+/// Sound assets
+/// They are loaded during the loading state, showing the progress
+#[derive(Resource)]
+pub struct SoundAssets {
     /// Simple jumping sound
     pub boing: Handle<AudioSource>,
     /// Background music for example games
@@ -65,28 +68,36 @@ pub struct ExampleAssets {
 pub(crate) fn load_core(mut cmd: Commands, asset_server: Res<AssetServer>) {
     // They use the asset server directly
     let assets = CoreAssets {
-        bevy_icon: asset_server.load(if cfg!(feature = "pixel_perfect") {
-            "icons/pixelbevy.png"
-        } else {
-            "icons/bevy.png"
-        }),
-        font: asset_server.load(if cfg!(feature = "pixel_perfect") {
-            "fonts/pixel.ttf"
-        } else {
-            "fonts/sans.ttf"
-        }),
+        bevy_icon: asset_server.load("icons/bevy.png"),
+        font: asset_server.load("fonts/sans.ttf"),
     };
 
     cmd.insert_resource(assets);
 }
 
-fn load_example(
+fn load_sprites(
+    mut cmd: Commands,
+    asset_server: Res<AssetServer>,
+    mut loading_data: ResMut<LoadingData>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(16), 48, 21, None, None);
+
+    let assets = SpriteAssets {
+        one_bit: loading_data.load(&asset_server, "sprites/1bit.png"),
+        one_bit_atlas: texture_atlas_layouts.add(layout),
+    };
+
+    cmd.insert_resource(assets);
+}
+
+fn load_sound(
     mut cmd: Commands,
     asset_server: Res<AssetServer>,
     mut loading_data: ResMut<LoadingData>,
 ) {
     // They use the loading data manager, which tracks if they are loaded
-    let assets = ExampleAssets {
+    let assets = SoundAssets {
         boing: loading_data.load(&asset_server, "sounds/boing.ogg"),
         ambient_music: loading_data.load(&asset_server, "music/rain.ogg"),
     };

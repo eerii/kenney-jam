@@ -1,7 +1,7 @@
 //! An opinionated template for bevy games
 
 // CHANGE: Comment this if it's too anoying when making games
-#![warn(missing_docs)]
+// #![warn(missing_docs)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
 
@@ -49,7 +49,6 @@ pub struct AppConfig {
     /// What size should the main window open in
     pub initial_window_res: WindowResolution,
     /// The size of the canvas that renders a pixel perfect game
-    /// (Not functional at the moment)
     #[cfg(feature = "pixel_perfect")]
     pub initial_game_res: Vec2,
 }

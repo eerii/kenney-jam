@@ -27,7 +27,7 @@ release = [ # Only in release (build with --release --no-default-features --feat
   "loading",
   "tts",
 ]
-common = ["input", "navigation", "persist", "ui"]
+common = ["input", "navigation", "persist", "pixel_perfect", "ui"]
 
 3d_camera = []
 input = ["leafwing-input-manager"]
@@ -62,15 +62,3 @@ rand = { version = "0.8" }
 itertools = { version = "0.13" }
 serde = { version = "1.0", features = ["derive"] }
 tts = { version = "0.26.3", optional = true }
-
-[[example]]
-name = "dvd"
-required-features = []
-
-[[example]]
-name = "jump"
-required-features = []
-
-[[example]]
-name = "breakout"
-required-features = []

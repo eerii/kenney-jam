@@ -39,8 +39,6 @@ impl Plugin for InputPlugin {
 /// CHANGE: Add player actions here and configure the default mappings in `init`
 #[derive(Actionlike, PartialEq, Eq, Hash, Clone, Copy, Debug, Reflect)]
 pub enum Action {
-    /// Button press usually assigned to Space or the A button in the gamepad
-    Jump,
     /// Two axis input usually assigned to WASD or the left gamepad stick
     Move,
     /// Button press usually assigned to Escape or Start
@@ -55,9 +53,6 @@ pub enum Action {
 fn init(mut cmd: Commands) {
     let mut input_map = InputMap::default();
     input_map
-        .insert(Action::Jump, KeyCode::Space)
-        .insert(Action::Jump, GamepadButtonType::South)
-        .insert(Action::Jump, MouseButton::Left)
         .insert(Action::Move, KeyboardVirtualDPad::WASD)
         .insert(Action::Move, GamepadStick::LEFT)
         .insert(Action::Pause, KeyCode::Escape)
