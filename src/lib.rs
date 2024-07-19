@@ -9,8 +9,10 @@ pub mod assets;
 pub mod audio;
 pub mod camera;
 pub mod data;
+pub mod enemy;
 #[cfg(feature = "input")]
 pub mod input;
+pub mod misc;
 pub mod player;
 pub mod tilemap;
 #[cfg(feature = "ui")]
@@ -42,6 +44,8 @@ pub enum GameState {
     /// End of the `Play` state, useful to restart the game
     End,
 }
+
+// TODO: Create custom schedules inside update
 
 /// Static configuration
 /// Allows to pass options to the game plugin such as the title and resolution.
@@ -161,6 +165,8 @@ impl Plugin for GamePlugin {
             audio::AudioPlugin,
             camera::CameraPlugin,
             data::DataPlugin,
+            enemy::EnemyPlugin,
+            misc::MiscPlugin,
             player::PlayerPlugin,
             tilemap::TilemapPlugin,
         ));

@@ -1,11 +1,11 @@
-use std::f32::consts::PI;
-
 use bevy::prelude::*;
 
 use crate::{
     assets::SpriteAssets,
+    enemy::{DamageEvent, Enemy},
     input::{Action, ActionState},
-    tilemap::{tile_to_pos, Tile, TileType, Tilemap, TILE_SEP},
+    misc::{Direction, MoveTo},
+    tilemap::{tile_to_pos, Tile, TileType, Tilemap},
     GameState, SCALE,
 };
 
@@ -23,9 +23,7 @@ impl Plugin for PlayerPlugin {
         )
         .add_systems(
             Update,
-            (update_player, move_to)
-                .chain()
-                .run_if(in_state(GameState::Play)),
+            move_player.run_if(in_state(GameState::Play)),
         );
     }
 }
@@ -35,23 +33,8 @@ impl Plugin for PlayerPlugin {
 // ··········
 
 #[derive(Component)]
-struct Player {
-    pos: UVec2,
-}
-
-enum Direction {
-    North,
-    South,
-    East,
-    West,
-}
-
-#[derive(Component)]
-struct MoveTo {
-    start: Vec2,
-    target: Vec2,
-    bump_dir: Option<Direction>,
-    timer: Timer,
+pub struct Player {
+    pub pos: UVec2,
 }
 
 // ·······
@@ -75,17 +58,19 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
     ));
 }
 
-fn update_player(
+fn move_player(
     mut cmd: Commands,
     input: Query<&ActionState<Action>>,
     mut player: Query<(Entity, &mut Player)>,
+    enemies: Query<(Entity, &Enemy)>,
     tiles: Query<&Tile>,
     tilemap: Res<Tilemap>,
+    mut damage_writer: EventWriter<DamageEvent>,
 ) {
     let Ok((entity, mut player)) = player.get_single_mut() else { return };
     let Ok(input) = input.get_single() else { return };
 
-    // let (mut x, mut y) = pos_to_tile(trans.translation.truncate());
+    // TODO: Change to uvec2
     let (mut x, mut y) = (player.pos.x, player.pos.y);
 
     if !input.just_pressed(&Action::Move) {
@@ -109,54 +94,29 @@ fn update_player(
         Direction::South
     };
 
-    let Some(tile) = tilemap.get_tile(x, y) else { return };
-    let Ok(tile) = tiles.get(tile) else { return };
-    let is_collision = matches!(tile.tile, TileType::Collision);
+    let mut is_collision = false;
+    for (enemy_entity, enemy) in enemies.iter() {
+        if enemy.pos == UVec2::new(x, y) {
+            is_collision = true;
+            damage_writer.send(DamageEvent(enemy_entity));
+            break;
+        }
+    }
 
-    cmd.entity(entity).insert(MoveTo {
-        start: tile_to_pos(player.pos.x, player.pos.y),
-        target: tile_to_pos(x, y),
-        bump_dir: if is_collision { Some(dir) } else { None },
-        timer: Timer::from_seconds(0.15, TimerMode::Once),
-    });
+    if !is_collision {
+        let Some(tile) = tilemap.get_tile(x, y) else { return };
+        let Ok(tile) = tiles.get(tile) else { return };
+        is_collision = matches!(tile.tile, TileType::Collision);
+    };
+
+    cmd.entity(entity).insert(MoveTo::new(
+        tile_to_pos(player.pos.x, player.pos.y),
+        tile_to_pos(x, y),
+        if is_collision { Some(dir) } else { None },
+    ));
 
     if !is_collision {
         player.pos.x = x;
         player.pos.y = y;
-    }
-}
-
-fn move_to(
-    mut cmd: Commands,
-    time: Res<Time>,
-    mut movables: Query<(Entity, &mut MoveTo, &mut Transform)>,
-) {
-    for (entity, mut to, mut trans) in movables.iter_mut() {
-        let timer = to.timer.tick(time.delta());
-        if timer.just_finished() {
-            cmd.entity(entity).remove::<MoveTo>();
-        }
-        let t = timer.fraction();
-
-        let pos = if let Some(dir) = &to.bump_dir {
-            let offset = (t * PI).sin() * TILE_SEP;
-            to.start + dir_to_vec(dir, offset)
-        } else {
-            to.start.lerp(to.target, t)
-        };
-        trans.translation = pos.extend(trans.translation.z);
-    }
-}
-
-// ·······
-// Helpers
-// ·······
-
-fn dir_to_vec(dir: &Direction, val: f32) -> Vec2 {
-    match dir {
-        Direction::North => Vec2::new(0., val),
-        Direction::South => Vec2::new(0., -val),
-        Direction::East => Vec2::new(val, 0.),
-        Direction::West => Vec2::new(-val, 0.),
     }
 }
