@@ -21,7 +21,7 @@ pub mod ui;
 use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
 
 const GAME_RES: Vec2 = Vec2::new(256., 192.);
-const SCALE: f32 = 3.;
+const SCALE: f32 = 4.;
 
 /// Indicates at which point the game is. Very useful for controlling which
 /// systems run when (in_state) and to create transitions (OnEnter/OnExit)

@@ -90,7 +90,7 @@ fn init_bevy(
                 .image(assets.bevy_icon.clone())
                 .insert(BevySplashScreen)
                 .style()
-                .width(Val::Percent(35.));
+                .height(Val::Percent(25.));
 
             column
                 .title(
