@@ -11,10 +11,15 @@ pub mod camera;
 pub mod data;
 #[cfg(feature = "input")]
 pub mod input;
+pub mod player;
+pub mod tilemap;
 #[cfg(feature = "ui")]
 pub mod ui;
 
 use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
+
+const GAME_RES: Vec2 = Vec2::new(256., 192.);
+const SCALE: f32 = 3.;
 
 /// Indicates at which point the game is. Very useful for controlling which
 /// systems run when (in_state) and to create transitions (OnEnter/OnExit)
@@ -57,9 +62,9 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             game_title: "Hello bevy!",
-            initial_window_res: Vec2::new(600., 600.).into(),
+            initial_window_res: (GAME_RES * SCALE).into(),
             #[cfg(feature = "pixel_perfect")]
-            initial_game_res: Vec2::new(600., 600.),
+            initial_game_res: GAME_RES,
         }
     }
 }
@@ -152,10 +157,12 @@ impl Plugin for GamePlugin {
 
         // Add the rest of the plugins
         app.add_plugins((
-            camera::CameraPlugin,
-            data::DataPlugin,
             assets::AssetLoaderPlugin,
             audio::AudioPlugin,
+            camera::CameraPlugin,
+            data::DataPlugin,
+            player::PlayerPlugin,
+            tilemap::TilemapPlugin,
         ));
 
         #[cfg(feature = "input")]
