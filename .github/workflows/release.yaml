@@ -1,0 +1,328 @@
+# Based on https://github.com/bevyengine/bevy_github_ci_template/blob/main/.github/workflows/release.yaml
+# For cache to work in tags, you need to create it first in main
+# The recommended way to do this is to dispatch a job manually, then the subsequent tag releases can use that cache
+name: release
+
+on:
+  push:
+    branches: [main]
+    tags: [ "*[0-9]+.[0-9]+" ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version as '<anything>0.1'"
+        required: true
+        type: string
+
+env:
+  binary: hello-bevy            # CHANGE: This needs to match the project name in Cargo.toml
+  itch_target: eerii/hello-bevy # CHANGE: If you want to deploy to itch, set this as your username/project-url
+  features: "release"           # CHANGE: Add features here if you need them
+  optimize: false               # CHANGE: This produces a smaller and faster web build, but it takes a long time
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get tag
+        id: tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+    outputs:
+      version: ${{ inputs.version || steps.tag.outputs.tag }}
+
+  release-wasm:
+    runs-on: ubuntu-latest
+
+    needs: get-version
+    env:
+      version: ${{needs.get-version.outputs.version}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install nix
+        uses: nixbuild/nix-quick-install-action@v28
+
+      - name: Use nix flake
+        uses: nicknovitski/nix-develop@v1
+        with:
+          arguments: ".#web"
+
+      - name: Rust cache
+        id: cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Build
+        if: ${{ github.ref_name != 'main' || steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          cargo build --release --target wasm32-unknown-unknown --no-default-features --features ${{ env.features }}
+
+      - name: Prepare package
+        if: ${{ github.ref_name != 'main' }}
+        run: |
+          wasm-bindgen --no-typescript --out-name ${{ env.binary }} --out-dir wasm --target web target/wasm32-unknown-unknown/release/${{ env.binary }}.wasm
+          sed -i "s/hello-bevy/${{ env.binary }}/g" wasm/index.html
+
+      - name: Optimize Wasm
+        if: ${{ env.optimize == 'true' && github.ref_name != 'main' }}
+        working-directory: ./wasm
+        run: |
+          mv ${{ env.binary }}_bg.wasm base.wasm
+          wasm-opt base.wasm -o ${{ env.binary }}_bg.wasm -Os
+
+      - name: Upload binaries to artifacts
+        if: ${{ github.ref_name != 'main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          path: wasm/*
+          name: wasm
+
+      - name: Package as a zip
+        if: ${{ github.ref_name != 'main' }}
+        working-directory: ./wasm
+        run: |
+          zip --recurse-paths ../${{ env.binary }}.zip .
+
+      - name: Upload binaries to release
+        if: ${{ github.ref_name != 'main' }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.binary }}.zip
+          asset_name: ${{ env.binary }}-wasm-${{ env.version }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  release-linux:
+    runs-on: ubuntu-latest
+
+    needs: get-version
+    env:
+      version: ${{needs.get-version.outputs.version}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install nix
+        uses: nixbuild/nix-quick-install-action@v28
+
+      - name: Use nix flake
+        uses: nicknovitski/nix-develop@v1
+
+      - name: Rust cache
+        id: cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Build
+        if: ${{ github.ref_name != 'main' || steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          cargo build --release --target x86_64-unknown-linux-gnu --no-default-features --features ${{ env.features }}
+
+      - name: Prepare package
+        if: ${{ github.ref_name != 'main' }}
+        run: |
+          mkdir linux
+          cp target/x86_64-unknown-linux-gnu/release/${{ env.binary }} linux/
+          strip linux/${{ env.binary }}
+
+      - name: Upload binaries to artifacts
+        if: ${{ github.ref_name != 'main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          path: linux/*
+          name: linux
+
+      - name: Package as a zip
+        if: ${{ github.ref_name != 'main' }}
+        working-directory: ./linux
+        run: |
+          zip --recurse-paths ../${{ env.binary }}.zip .
+
+      - name: Upload binaries to release
+        if: ${{ github.ref_name != 'main' }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.binary }}.zip
+          asset_name: ${{ env.binary }}-linux-${{ env.version }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  release-windows:
+    runs-on: windows-latest
+
+    needs: get-version
+    env:
+      version: ${{needs.get-version.outputs.version}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Remove debug config (windows)
+        run: Remove-Item -Path .cargo/config.toml
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        id: cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Build
+        if: ${{ github.ref_name != 'main' || steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          cargo build --release --target x86_64-pc-windows-msvc --no-default-features --features ${{ env.features }}
+
+      - name: Prepare package
+        if: ${{ github.ref_name != 'main' }}
+        run: |
+          mkdir windows
+          cp target/x86_64-pc-windows-msvc/release/${{ env.binary }}.exe windows/
+
+      - name: Upload binaries to artifacts
+        if: ${{ github.ref_name != 'main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          path: windows/*
+          name: windows
+
+      - name: Package as a zip
+        if: ${{ github.ref_name != 'main' }}
+        run: |
+          Compress-Archive -Path windows/* -DestinationPath ${{ env.binary }}.zip
+
+      - name: Upload binaries to release
+        if: ${{ github.ref_name != 'main' }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.binary }}.zip
+          asset_name: ${{ env.binary }}-windows-${{ env.version }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  release-macos:
+    runs-on: macos-latest
+
+    needs: get-version
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 11.0
+      version: ${{needs.get-version.outputs.version}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Remove debug config
+        run: rm -f .cargo/config.toml
+
+      - name: Install rust toolchain for Apple Silicon
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Rust cache
+        id: cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Build release for Apple Silicon
+        if: ${{ github.ref_name != 'main' || steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          SDKROOT=$(xcrun -sdk macosx --show-sdk-path) cargo build --release --target=aarch64-apple-darwin --no-default-features --features ${{ env.features }}
+
+      - name: Install rust toolchain for Apple x86
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: Build release for x86 Apple
+        if: ${{ github.ref_name != 'main' || steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          SDKROOT=$(xcrun -sdk macosx --show-sdk-path) cargo build --release --target=x86_64-apple-darwin --no-default-features --features ${{ env.features }}
+
+      - name: Create Universal Binary
+        if: ${{ github.ref_name != 'main' }}
+        run: |
+          lipo -create -output target/release/${{ env.binary }} target/aarch64-apple-darwin/release/${{ env.binary }} target/x86_64-apple-darwin/release/${{ env.binary }}
+
+      - name: Prepare package
+        if: ${{ github.ref_name != 'main' }}
+        run: |
+          mkdir -p ${{ env.binary }}.app/Contents/MacOS
+          cp target/release/${{ env.binary }} ${{ env.binary }}.app/Contents/MacOS/
+          strip ${{ env.binary }}.app/Contents/MacOS/${{ env.binary }}
+          hdiutil create -fs HFS+ -volname "${{ env.binary }}" -srcfolder ${{ env.binary }}.app ${{ env.binary }}.dmg
+
+      - name: Upload binaries to artifacts
+        if: ${{ github.ref_name != 'main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ env.binary }}.dmg
+          name: mac
+
+      - name: Upload binaries to release
+        if: ${{ github.ref_name != 'main' }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.binary }}.dmg
+          asset_name: ${{ env.binary }}-macos-${{ env.version }}.dmg
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  check-upload-to-itch:
+    runs-on: ubuntu-latest
+    outputs:
+      should-upload: ${{ steps.check-env.outputs.has-itch-target }}
+    steps:
+      - id: check-env
+        run: |
+          if [[ -z "$itch_target" ]]; then
+            echo "has-itch-target=no" >> $GITHUB_OUTPUT
+          else
+            echo "has-itch-target=yes" >> $GITHUB_OUTPUT
+          fi
+
+  upload-to-itch:
+    runs-on: ubuntu-latest
+    needs:
+      - check-upload-to-itch
+      - release-wasm
+      - release-linux
+      - release-windows
+      - release-macos
+    if: ${{ needs.check-upload-to-itch.outputs.should-upload == 'yes' && github.ref_name != 'main' }}
+
+    env:
+      version: ${{needs.get-version.outputs.version}}
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./builds
+
+      - name: Install butler
+        run: |
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip
+          chmod +x butler
+          ./butler -V
+
+      - name: Upload to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.ITCH_API_KEY }}
+        run: |
+          echo "Uploading to itch.io"
+          echo $(ls builds)
+          for channel in $(ls builds); do
+            ./butler push \
+                --fix-permissions \
+                --userversion="${{ env.version }}" \
+                builds/$channel \
+                ${{ env.itch_target }}:$channel
+          done

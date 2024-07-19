@@ -1,0 +1,76 @@
+[package]
+# CHANGE: Set your project name
+name = "hello-bevy"
+version = "0.14.0"
+edition = "2021"
+description = "a bevy game template"
+exclude = ["assets", "wasm", ".data"]
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3 # Improves performance when developing, but slows down first compilation significantly
+debug = false # Disabled debug symbols for dependencies
+
+[features]
+default = [ # Only in debug
+  "bevy/bevy_dev_tools",   # Some helpful developer utils
+  "bevy/dynamic_linking",  # Enables dynamic linking for faster compilation
+  "bevy/embedded_watcher", # Enables hot reloading of assets
+  "bevy/file_watcher",     # Enables hot reloading of assets
+  "common",
+]
+release = [ # Only in release (build with --release --no-default-features --features release)
+  "bevy_embedded_assets",
+  "common",
+  "loading",
+  "tts",
+]
+common = ["input", "navigation", "persist", "ui"]
+
+3d_camera = []
+input = ["leafwing-input-manager"]
+loading = ["ui"]
+menu = ["input", "navigation", "ui"]
+navigation = ["bevy-alt-ui-navigation-lite", "ui"]
+persist = ["bevy-persistent"]
+pixel_perfect = []
+resizable = []
+trace = ["release", "bevy/trace_tracy"]
+ui = ["sickle_ui"]
+
+[dependencies]
+# The bevy engine <3
+bevy = { version = "0.14", features = ["serialize", "wayland"] }
+
+# Input manager
+leafwing-input-manager = { git = "https://github.com/Leafwing-Studios/leafwing-input-manager", optional = true }
+
+# UI (on top of bevy's)
+sickle_ui = { git = "https://github.com/UmbraLuminosa/sickle_ui", optional = true }
+bevy-alt-ui-navigation-lite = { version = "0.2", optional = true }
+
+# Persistent data
+bevy-persistent = { version = "0.6", features = ["toml"], optional = true }
+
+# Release only dependencies
+bevy_embedded_assets = { version = "0.11", optional = true }
+
+# Addons
+rand = { version = "0.8" }
+itertools = { version = "0.13" }
+serde = { version = "1.0", features = ["derive"] }
+tts = { version = "0.26.3", optional = true }
+
+[[example]]
+name = "dvd"
+required-features = []
+
+[[example]]
+name = "jump"
+required-features = []
+
+[[example]]
+name = "breakout"
+required-features = []
