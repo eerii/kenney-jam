@@ -7,12 +7,10 @@
 use bevy::prelude::*;
 use sickle_ui::prelude::*;
 
-use super::navigation::HightlightChild;
-
 const BUTTON_WIDTH: Val = Val::Px(256.);
 const BUTTON_HEIGHT: Val = Val::Px(64.);
 
-const FONT_SIZE_MULT: f32 = if cfg!(feature = "pixel_perfect") { 0.5 } else { 1.0 };
+const FONT_SIZE_MULT: f32 = 1.0;
 const FONT_SIZE_TEXT: f32 = 36. * FONT_SIZE_MULT;
 const FONT_SIZE_TITLE: f32 = 64. * FONT_SIZE_MULT;
 
@@ -85,9 +83,9 @@ pub trait UiButtonWidget {
     ) -> UiBuilder<Entity>;
 }
 
-#[cfg(not(feature = "navigation"))]
+#[cfg(not(feature = "menu"))]
 type ButtonType = ButtonBundle;
-#[cfg(feature = "navigation")]
+#[cfg(feature = "menu")]
 type ButtonType = NodeBundle;
 
 impl UiButtonWidget for UiBuilder<'_, Entity> {
@@ -108,11 +106,10 @@ impl UiButtonWidget for UiBuilder<'_, Entity> {
                         ..default()
                     },
                     background_color: BUTTON_COLOR.into(),
-                    #[cfg(not(feature = "pixel_perfect"))]
                     border_radius: BorderRadius::MAX,
                     ..default()
                 },
-                #[cfg(feature = "navigation")]
+                #[cfg(feature = "menu")]
                 bevy_alt_ui_navigation_lite::prelude::Focusable::default(),
                 component,
             ),
@@ -154,11 +151,12 @@ impl UiOptionRowWidget for UiBuilder<'_, Entity> {
 
             row.text(text, font).style().flex_grow(1.);
 
+            row.insert(component);
+
+            #[cfg(feature = "menu")]
             row.insert((
-                #[cfg(feature = "navigation")]
                 bevy_alt_ui_navigation_lite::prelude::Focusable::default(),
-                component,
-                HightlightChild,
+                super::menu::navigation::HightlightChild,
             ));
         })
     }
@@ -178,7 +176,6 @@ impl UiOptionRowWidget for UiBuilder<'_, Entity> {
                     ..default()
                 },
                 background_color: BUTTON_COLOR.into(),
-                #[cfg(not(feature = "pixel_perfect"))]
                 border_radius: BorderRadius::MAX,
                 ..default()
             },

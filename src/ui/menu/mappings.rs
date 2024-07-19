@@ -14,8 +14,7 @@ use crate::{
     data::{GameOptions, Persistent},
     input::Action,
     ui::{
-        menu::{MenuButton, MenuState, UI_GAP},
-        navigation::FocusableHoverFill,
+        menu::{navigation::FocusableHoverFill, MenuButton, MenuState, UI_GAP},
         widgets::{UiButtonWidget, UiImageWidget, UiOptionRowWidget, UiTextWidget},
         UiRootContainer,
     },

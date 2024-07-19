@@ -9,8 +9,10 @@ pub mod assets;
 pub mod audio;
 pub mod camera;
 pub mod data;
+pub mod enemy;
 #[cfg(feature = "input")]
 pub mod input;
+pub mod misc;
 pub mod player;
 pub mod tilemap;
 #[cfg(feature = "ui")]
@@ -35,12 +37,40 @@ pub enum GameState {
     /// After startup it transitions to loading, which handles splash screens
     /// and assets. It stays here until all the relevant assets are ready
     Loading,
-    /// The main menu of the game, everything is paused
-    Menu,
     /// Main state, this represents the actual game
     Play,
+    /// Going to another level
+    LevelTransition,
     /// End of the `Play` state, useful to restart the game
     End,
+}
+
+#[derive(SubStates, Debug, Clone, Eq, PartialEq, Hash)]
+#[source(GameState = GameState::Play)]
+pub enum PlayState {
+    Play,
+    #[cfg(feature = "menu")]
+    Menu,
+}
+
+impl Default for PlayState {
+    fn default() -> Self {
+        #[cfg(not(feature = "menu"))]
+        return Self::Play;
+        #[cfg(feature = "menu")]
+        return Self::Menu;
+    }
+}
+
+/// Custom update schedules
+/// Useful for ordering inside Update
+#[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash)]
+enum PlaySet {
+    Tick,
+    Move,
+    Collision,
+    Events,
+    Animation,
 }
 
 /// Static configuration
@@ -151,9 +181,25 @@ impl Plugin for GamePlugin {
                 .set(asset_plugin),
         );
 
+        // Add the detailed schedule set
+        app.configure_sets(
+            Update,
+            (
+                PlaySet::Tick,
+                PlaySet::Move,
+                PlaySet::Collision,
+                PlaySet::Events,
+                PlaySet::Animation,
+            )
+                .chain()
+                .run_if(in_state(PlayState::Play)),
+        );
+
         // Insert the game state
         app.insert_state(GameState::default())
-            .enable_state_scoped_entities::<GameState>();
+            .enable_state_scoped_entities::<GameState>()
+            .add_sub_state::<PlayState>()
+            .enable_state_scoped_entities::<PlayState>();
 
         // Add the rest of the plugins
         app.add_plugins((
@@ -161,6 +207,8 @@ impl Plugin for GamePlugin {
             audio::AudioPlugin,
             camera::CameraPlugin,
             data::DataPlugin,
+            enemy::EnemyPlugin,
+            misc::MiscPlugin,
             player::PlayerPlugin,
             tilemap::TilemapPlugin,
         ));

@@ -1,7 +1,7 @@
 //! Speech module
 
 use bevy::prelude::*;
-#[cfg(feature = "navigation")]
+#[cfg(feature = "menu")]
 use bevy_alt_ui_navigation_lite::prelude::*;
 use tts::{Features, Tts};
 
@@ -21,10 +21,10 @@ pub struct SpeechPlugin;
 impl Plugin for SpeechPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Loading), init);
-        #[cfg(feature = "navigation")]
+        #[cfg(feature = "menu")]
         app.add_systems(
             Update,
-            navigation_speech.run_if(in_state(GameState::Menu)),
+            navigation_speech.run_if(in_state(crate::PlayState::Menu)),
         );
     }
 }
@@ -91,7 +91,7 @@ fn init(mut cmd: Commands) {
     cmd.insert_resource(Speech { tts });
 }
 
-#[cfg(feature = "navigation")]
+#[cfg(feature = "menu")]
 fn navigation_speech(
     query: Query<
         (

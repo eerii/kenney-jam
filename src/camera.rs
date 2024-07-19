@@ -4,7 +4,8 @@ use bevy::prelude::*;
 
 use crate::{
     data::{init_data, GameOptions, Persistent},
-    GameState,
+    player::Player,
+    GameState, PlaySet,
 };
 
 /// The luminance of the background color
@@ -24,6 +25,10 @@ impl Plugin for CameraPlugin {
         app.add_systems(
             OnEnter(GameState::Startup),
             init.after(init_data),
+        )
+        .add_systems(
+            Update,
+            update_camera.after(PlaySet::Animation),
         );
     }
 }
@@ -51,7 +56,6 @@ fn init(mut cmd: Commands, options: Res<Persistent<GameOptions>>) {
     let clear_color =
         ClearColorConfig::Custom(options.base_color.with_luminance(BACKGROUND_LUMINANCE));
 
-    #[cfg(not(feature = "3d_camera"))]
     let camera_bundle = Camera2dBundle {
         camera: Camera {
             clear_color,
@@ -60,15 +64,17 @@ fn init(mut cmd: Commands, options: Res<Persistent<GameOptions>>) {
         ..default()
     };
 
-    #[cfg(feature = "3d_camera")]
-    let camera_bundle = Camera3dBundle {
-        camera: Camera {
-            clear_color,
-            ..default()
-        },
-        transform: Transform::from_xyz(0.0, 0.0, 10.0),
-        ..default()
-    };
-
     cmd.spawn((camera_bundle, GameCamera, FinalCamera));
+}
+
+fn update_camera(
+    player: Query<&Transform, (With<Player>, Without<GameCamera>)>,
+    mut cam: Query<&mut Transform, With<GameCamera>>,
+) {
+    let Ok(player) = player.get_single() else { return };
+    let Ok(mut trans) = cam.get_single_mut() else { return };
+
+    let target_pos = player.translation.truncate();
+    let pos = trans.translation.truncate().lerp(target_pos, 0.1);
+    trans.translation = pos.extend(trans.translation.z);
 }
