@@ -2,7 +2,7 @@ use bevy::{
     prelude::*,
     window::{PrimaryWindow, WindowResized},
 };
-use hello_bevy::{
+use kenney_jam::{
     assets::{CoreAssets, ExampleAssets},
     camera::GameCamera,
     AppConfig, GamePlugin, GameState,

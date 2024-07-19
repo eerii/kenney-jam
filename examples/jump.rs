@@ -2,7 +2,7 @@
 #![allow(clippy::type_complexity)]
 
 use bevy::{math::bounding::*, prelude::*};
-use hello_bevy::{
+use kenney_jam::{
     assets::CoreAssets,
     camera::GameCamera,
     data::{GameOptions, Persistent},

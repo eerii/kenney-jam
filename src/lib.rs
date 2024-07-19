@@ -110,7 +110,7 @@ impl Plugin for GamePlugin {
         let log_plugin = if cfg!(debug_assertions) {
             LogPlugin {
                 level: bevy::log::Level::DEBUG,
-                filter: format!("{},hello_bevy=debug", default_log),
+                filter: format!("{},kenney_jam=debug", default_log),
                 ..default()
             }
         } else {

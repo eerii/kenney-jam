@@ -2,7 +2,7 @@
 #![allow(clippy::type_complexity)]
 
 use bevy::{math::bounding::*, prelude::*, sprite::MaterialMesh2dBundle};
-use hello_bevy::{
+use kenney_jam::{
     assets::ExampleAssets,
     data::{GameOptions, Persistent},
     input::{Action, ActionState},

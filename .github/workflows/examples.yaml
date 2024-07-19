@@ -9,7 +9,7 @@ on:
         type: string
 
 env:
-  binary: hello-bevy # CHANGE: This needs to match the project name in Cargo.toml
+  binary: kenney-jam # CHANGE: This needs to match the project name in Cargo.toml
   optimize: false    # CHANGE: This produces a smaller and faster web build, but it takes a long time
 
 jobs:
