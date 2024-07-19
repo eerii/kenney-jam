@@ -27,7 +27,13 @@ release = [ # Only in release (build with --release --no-default-features --feat
   "loading",
   "tts",
 ]
-common = ["input", "navigation", "persist", "pixel_perfect", "ui"]
+common = [
+  "input",
+  "navigation",
+  "persist",
+  "pixel_perfect",
+  "ui",
+]
 
 3d_camera = []
 input = ["leafwing-input-manager"]

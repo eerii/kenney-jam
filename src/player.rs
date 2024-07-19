@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     assets::SpriteAssets,
     input::{Action, ActionState},
-    tilemap::TILE_SEP,
+    tilemap::{pos_to_tile, tile_to_pos, Tile, TileType, Tilemap},
     GameState, SCALE,
 };
 
@@ -55,16 +55,33 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
 fn update_player(
     input: Query<&ActionState<Action>>,
     mut player: Query<&mut Transform, With<Player>>,
+    tiles: Query<&Tile>,
+    tilemap: Res<Tilemap>,
 ) {
     let Ok(mut trans) = player.get_single_mut() else { return };
     let Ok(input) = input.get_single() else { return };
 
+    let (mut x, mut y) = pos_to_tile(trans.translation.truncate());
+
     if input.just_pressed(&Action::Move) {
         let Some(axis) = input.clamped_axis_pair(&Action::Move) else { return };
         if axis.x().abs() > axis.y().abs() {
-            trans.translation.x += axis.x().signum() * TILE_SEP * SCALE;
+            if axis.x() > 0. {
+                x = x.saturating_add(1);
+            } else {
+                x = x.saturating_sub(1);
+            }
+        } else if axis.y() > 0. {
+            y = y.saturating_add(1);
         } else {
-            trans.translation.y += axis.y().signum() * TILE_SEP * SCALE;
+            y = y.saturating_sub(1);
         }
+    };
+
+    let Some(tile) = tilemap.get_tile(x, y) else { return };
+    let Ok(tile) = tiles.get(tile) else { return };
+
+    if !matches!(tile.tile, TileType::Collision) {
+        trans.translation = tile_to_pos(x, y).extend(10.);
     };
 }
