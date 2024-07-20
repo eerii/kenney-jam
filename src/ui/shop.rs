@@ -75,6 +75,9 @@ fn init(
                     save_data.max_battery as f32,
                 ),
                 (7 * ATLAS_SIZE.0 + 34, save_data.attack),
+                (10 * ATLAS_SIZE.0 + 15, save_data.fire as f32),
+                (13 * ATLAS_SIZE.0 + 32, save_data.water as f32),
+                (ATLAS_SIZE.0 + 3, save_data.grass as f32),
             ];
 
             for (index, value) in upgrades {

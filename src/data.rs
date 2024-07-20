@@ -66,6 +66,12 @@ pub struct SaveData {
     pub max_battery: u32,
     pub battery: u32,
     pub attack: f32,
+    pub fire: u32,
+    pub water: u32,
+    pub grass: u32,
+    pub fire_uses: u32,
+    pub water_uses: u32,
+    pub grass_uses: u32,
 }
 
 impl Default for SaveData {
@@ -76,6 +82,12 @@ impl Default for SaveData {
             battery: 50,
             max_battery: 50,
             attack: 1.,
+            fire: 0,
+            water: 0,
+            grass: 0,
+            fire_uses: 0,
+            water_uses: 0,
+            grass_uses: 0,
         }
     }
 }
