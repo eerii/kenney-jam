@@ -1,9 +1,13 @@
 use bevy::prelude::*;
 
+#[cfg(feature = "persist")]
+pub use bevy_persistent::prelude::Persistent;
+
 use crate::{
     assets::{SoundAssets, SpriteAssets, ATLAS_SIZE},
     tilemap::tile_to_pos,
     GameState, PlaySet, SCALE,
+    data::SaveData,
 };
 
 // ······
@@ -27,6 +31,21 @@ impl Plugin for EnemyPlugin {
 // Components
 // ··········
 
+const WEIGHTS: [[u32; 5]; 12] = [
+    [ 90, 10, 00, 00, 00 ],
+    [ 70, 25, 05, 00, 00 ],
+    [ 40, 35, 25, 00, 00 ],
+    [ 10, 50, 35, 05, 00 ],
+    [ 00, 30, 45, 25, 00 ],
+    [ 00, 10, 30, 50, 10 ],
+    [ 00, 00, 10, 65, 25 ],
+    [ 00, 00, 00, 65, 35 ],
+    [ 00, 00, 00, 50, 50 ],
+    [ 00, 00, 00, 30, 70 ],
+    [ 00, 00, 00, 15, 85 ],
+    [ 00, 00, 00, 05, 95 ],
+];
+
 pub enum EnemyType {
     Chicken,
     Cat,
@@ -35,8 +54,16 @@ pub enum EnemyType {
     Man,
 }
 
-fn ret_type() -> EnemyType {
-    match rand::random::<u32>() % 5 {
+fn ret_type(level: u32) -> EnemyType {
+    let rnd = rand::random::<u32>() % 100;
+    let mut typ = 0;
+    let mut cum_w = 0;
+    for w in WEIGHTS[level as usize].iter() {
+        cum_w += w;
+        if rnd < cum_w { break; }
+        typ += 1;
+    }
+    match typ {
         0 => EnemyType::Chicken,
         1 => EnemyType::Cat,
         2 => EnemyType::Dog,
@@ -63,7 +90,10 @@ pub struct DamageEvent(pub Entity);
 // Systems
 // ·······
 
-fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
+fn init(mut cmd: Commands,
+        sprite_assets: Res<SpriteAssets>,
+        save_data: Res<Persistent<SaveData>>,
+) {
     for _ in 0..3 {
         let tile_pos = UVec2::new(
             rand::random::<u32>() % 11,
@@ -72,7 +102,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
         let pos = tile_to_pos(tile_pos);
         let index;
         let health;
-        let typ = ret_type();
+        let typ = ret_type(save_data.level);
         match typ {
             EnemyType::Chicken => {
                 index = 7 * ATLAS_SIZE.0 + 25 + rand::random::<usize>() % 2;
@@ -87,11 +117,11 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
                 health = 3;
             },
             EnemyType::YoungOld => {
-                index = 4 * ATLAS_SIZE.0 + 29;
+                index = 4 * ATLAS_SIZE.0 + 28 + rand::random::<usize>() % 2;
                 health = 4;
             },
             EnemyType::Man => {
-                index = 28;
+                index = 26 + rand::random::<usize>() % 6;
                 health = 5;
             },
         }
