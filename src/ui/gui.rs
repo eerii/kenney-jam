@@ -165,6 +165,7 @@ fn init(
                             ..default()
                         },
                         image: UiImage::new(sprite_assets.one_bit.clone()),
+                        background_color: BackgroundColor::from(Srgba::new(0.478, 0.267, 0.29, 1.)),
                         ..default()
                     },
                     TextureAtlas {
