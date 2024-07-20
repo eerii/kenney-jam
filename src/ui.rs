@@ -5,6 +5,7 @@ use sickle_ui::{prelude::*, SickleUiPlugin};
 
 use crate::{camera::FinalCamera, GameState};
 
+pub mod confirm;
 pub mod gui;
 #[cfg(feature = "loading")]
 pub mod loading;
@@ -29,6 +30,7 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             SickleUiPlugin,
+            confirm::ConfirmPlugin,
             gui::GuiPlugin,
             shop::ShopPlugin,
         ))

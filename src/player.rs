@@ -1,6 +1,6 @@
 use bevy::{
     audio::{PlaybackMode, Volume},
-    color::palettes::css::{BLUE, GRAY, RED, SILVER, WHITE, YELLOW},
+    color::palettes::css::{BLUE, GRAY, SILVER, WHITE, YELLOW},
     prelude::*,
 };
 use rand::Rng;
@@ -11,8 +11,8 @@ use crate::{
     enemy::{DamageEvent, Enemy},
     input::{Action, ActionState},
     misc::{dir_to_vec, Direction, MoveTo},
-    tilemap::{tile_to_pos, NextLevelEvent, Tile, Tilemap, ROOM_SEP},
-    GameState, PlaySet, SCALE,
+    tilemap::{tile_to_pos, Tile, Tilemap, ROOM_SEP},
+    GameState, PlaySet, PlayState, SCALE,
 };
 
 const LOW_CONNECTION_PERCENTS: [f32; 5] = [0.5, 0.35, 0.2, 0.1, 0.0];
@@ -60,7 +60,6 @@ struct WrongMove(Timer);
 pub enum Status {
     BatteryLow,
     BatteryEmpty,
-    HealthLow,
     ConnectionLow,
     ConnectionEmpty,
 }
@@ -90,6 +89,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
     ));
 }
 
+// TODO: Turn based movement
 fn move_player(
     mut cmd: Commands,
     mut player: Query<(Entity, &mut Player)>,
@@ -99,8 +99,8 @@ fn move_player(
     tilemap: Res<Tilemap>,
     sound_assets: Res<SoundAssets>,
     mut save_data: ResMut<Persistent<SaveData>>,
+    mut next_play_state: ResMut<NextState<PlayState>>,
     mut damage_writer: EventWriter<DamageEvent>,
-    mut next_level_writer: EventWriter<NextLevelEvent>,
 ) {
     if save_data.battery == 0 {
         return;
@@ -170,12 +170,10 @@ fn move_player(
         let Ok(tile) = tiles.get(tile) else { return };
         match tile {
             Tile::LadderUp => {
-                next_level_writer.send(NextLevelEvent { shop: true });
-                return;
+                next_play_state.set(PlayState::ToShop);
             },
             Tile::LadderDown => {
-                next_level_writer.send(NextLevelEvent { shop: false });
-                return;
+                next_play_state.set(PlayState::ToLevel);
             },
             Tile::Wall => is_collision = true,
             _ => {},
@@ -220,6 +218,7 @@ fn tick_wrong_move(
 fn on_status(
     mut player: Query<(&mut Sprite, Option<&WrongMove>), With<Player>>,
     mut status_reader: EventReader<StatusEvent>,
+    mut next_play_state: ResMut<NextState<PlayState>>,
 ) {
     let Ok((mut sprite, wrong_move)) = player.get_single_mut() else { return };
 
@@ -229,9 +228,8 @@ fn on_status(
                 sprite.color = YELLOW.into();
             },
             Status::BatteryEmpty => {
-                sprite.color = RED.into();
+                next_play_state.set(PlayState::GameOver);
             },
-            Status::HealthLow => info!("health low"),
             Status::ConnectionLow => {
                 sprite.color = SILVER.into();
             },

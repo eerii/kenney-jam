@@ -8,7 +8,7 @@ use leafwing_input_manager::prelude::*;
 
 use crate::{
     ui::{menu::MenuState, widgets::BUTTON_COLOR},
-    GameState, PlayState,
+    GameState,
 };
 
 // ······
@@ -39,7 +39,7 @@ impl Plugin for NavigationPlugin {
                 handle_input.before(NavRequestSystem),
                 update_focus.after(NavRequestSystem),
             )
-                .run_if(in_state(PlayState::Menu).or_else(in_state(GameState::Shop))),
+                .run_if(in_state(GameState::Play).or_else(in_state(GameState::Shop))),
         );
     }
 }

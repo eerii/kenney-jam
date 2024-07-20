@@ -56,6 +56,9 @@ pub enum PlayState {
     Play,
     #[cfg(feature = "menu")]
     Menu,
+    ToShop,
+    ToLevel,
+    GameOver,
 }
 
 impl Default for PlayState {

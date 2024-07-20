@@ -13,7 +13,7 @@ use crate::{
     enemy::{get_enemy, Element},
     misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
-    GameState, PlaySet, PlayState, SCALE,
+    GameState, PlayState, SCALE,
 };
 
 pub const TILE_SEP: f32 = 20.;
@@ -27,16 +27,10 @@ pub struct TilemapPlugin;
 
 impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<NextLevelEvent>()
-            .add_systems(OnEnter(GameState::Play), init)
-            .add_systems(
-                Update,
-                on_next_level.in_set(PlaySet::Events),
-            )
-            .add_systems(
-                OnEnter(GameState::LevelTransition),
-                level_transition,
-            );
+        app.add_systems(OnEnter(GameState::Play), init).add_systems(
+            OnEnter(GameState::LevelTransition),
+            level_transition,
+        );
     }
 }
 
@@ -101,15 +95,6 @@ pub enum Tile {
     LadderUp,
 }
 
-// ······
-// Events
-// ······
-
-#[derive(Event)]
-pub struct NextLevelEvent {
-    pub shop: bool,
-}
-
 // ·······
 // Systems
 // ·······
@@ -128,16 +113,6 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>, save_data: Res<Pers
         (ROOM_SEP.y / 2 + 1, ROOM_SEP.y - 4),
     );
     cmd.insert_resource(Tilemap { tiles });
-}
-
-fn on_next_level(
-    mut next_state: ResMut<NextState<GameState>>,
-    mut next_level_reader: EventReader<NextLevelEvent>,
-) {
-    // TODO: Confirm that you want to continue
-    if let Some(event) = next_level_reader.read().next() {
-        next_state.set(if event.shop { GameState::Shop } else { GameState::LevelTransition });
-    }
 }
 
 fn level_transition(
@@ -284,6 +259,9 @@ fn generate_level(
         break;
     }
 
+    // TODO: Generate shop currency
+    // TODO: Generate some linear walls
+
     // Create actual tiles
     tiles
         .iter()
@@ -303,11 +281,23 @@ fn generate_level(
 }
 
 fn generate_room(tiles: &mut HashMap<TileData, Tile>, size: UVec2, offset: IVec2, level: u32) {
+    let mut rng = rand::thread_rng();
+    let grow = (level / 3, level / 2);
+    let num_enemies = rng.gen_range(1 + grow.0..3 + grow.1);
+
+    let mut indices: Vec<(u32, u32)> = (1..=size.x).cartesian_product(0..=size.y).collect();
+    indices.shuffle(&mut rand::thread_rng());
+    let enemy_tiles = indices.get(0..num_enemies as usize);
+
     for (x, y) in (0..=size.x + 1).cartesian_product(0..=size.y + 1) {
         let tile = if x == 0 || x == size.x + 1 || y == 0 || y == size.y + 1 {
             Tile::Wall
-        } else if x == 3 && y == 3 {
-            Tile::Enemy
+        } else if let Some(tiles) = enemy_tiles {
+            if tiles.contains(&(x, y)) {
+                Tile::Enemy
+            } else {
+                Tile::Ground
+            }
         } else {
             Tile::Ground
         };
@@ -331,6 +321,7 @@ fn create_tile(
     tile: Tile,
     index: usize,
 ) -> Entity {
+    // If it has an enemy, spawn it
     if matches!(tile, Tile::Enemy) {
         let (enemy, index) = get_enemy(pos, level);
         cmd.spawn((
