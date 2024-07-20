@@ -79,7 +79,7 @@ pub(crate) fn load_core(mut cmd: Commands, asset_server: Res<AssetServer>) {
     // They use the asset server directly
     let assets = CoreAssets {
         bevy_icon: asset_server.load("icons/bevy.png"),
-        font: asset_server.load("fonts/sans.ttf"),
+        font: asset_server.load("fonts/kenney-pixel.ttf"),
     };
 
     cmd.insert_resource(assets);
@@ -119,32 +119,12 @@ fn load_sound(
         "music/B_no_piano.ogg",
         "music/B_piano.ogg",
     ];
-    let cat = [
-        "sounds/cat_1.ogg",
-        "sounds/cat_2.ogg",
-        "sounds/cat_3.ogg",
-    ];
-    let chicken = [
-        "sounds/chicken_1.ogg",
-        "sounds/chicken_2.ogg",
-    ];
-    let dog = [
-        "sounds/dog_1.ogg",
-        "sounds/dog_2.ogg",
-        "sounds/dog_3.ogg",
-    ];
-    let man = [
-        "sounds/man_death.ogg",
-        "sounds/man_hey.ogg",
-    ];
-    let steps = [
-        "sounds/step_1.ogg",
-        "sounds/step_2.ogg",
-    ];
-    let upgrades = [
-        "sounds/upgrade_1.ogg",
-        "sounds/upgrade_2.ogg",
-    ];
+    let cat = ["sounds/cat_1.ogg", "sounds/cat_2.ogg", "sounds/cat_3.ogg"];
+    let chicken = ["sounds/chicken_1.ogg", "sounds/chicken_2.ogg"];
+    let dog = ["sounds/dog_1.ogg", "sounds/dog_2.ogg", "sounds/dog_3.ogg"];
+    let man = ["sounds/man_death.ogg", "sounds/man_hey.ogg"];
+    let steps = ["sounds/step_1.ogg", "sounds/step_2.ogg"];
+    let upgrades = ["sounds/upgrade_1.ogg", "sounds/upgrade_2.ogg"];
     // They use the loading data manager, which tracks if they are loaded
     let assets = SoundAssets {
         ambient_music: loading_data.load_vec(&asset_server, &music),

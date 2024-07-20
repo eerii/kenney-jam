@@ -23,6 +23,9 @@ use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
 const GAME_RES: Vec2 = Vec2::new(256., 192.);
 const SCALE: f32 = 4.;
 
+// const GAME_RES: Vec2 = Vec2::new(256. * 4., 192. * 4.);
+// const SCALE: f32 = 1.;
+
 /// Indicates at which point the game is. Very useful for controlling which
 /// systems run when (in_state) and to create transitions (OnEnter/OnExit)
 /// You can also scope entities to a state with StateScoped, and they will

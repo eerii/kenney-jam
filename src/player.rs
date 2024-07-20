@@ -1,19 +1,21 @@
 use bevy::{
-    color::palettes::css::{BLUE, GRAY, RED, SILVER, WHITE, YELLOW},
     audio::{PlaybackMode, Volume},
+    color::palettes::css::{BLUE, GRAY, RED, SILVER, WHITE, YELLOW},
     prelude::*,
 };
 use rand::Rng;
 
 use crate::{
-    assets::{SpriteAssets, SoundAssets},
+    assets::{SoundAssets, SpriteAssets},
     data::{Persistent, SaveData},
     enemy::{DamageEvent, Enemy},
     input::{Action, ActionState},
     misc::{dir_to_vec, Direction, MoveTo},
-    tilemap::{tile_to_pos, NextLevelEvent, Tile, TileType, Tilemap},
+    tilemap::{tile_to_pos, NextLevelEvent, Tile, Tilemap, ROOM_SEP},
     GameState, PlaySet, SCALE,
 };
+
+const LOW_CONNECTION_PERCENTS: [f32; 5] = [0.5, 0.35, 0.2, 0.1, 0.0];
 
 // ······
 // Plugin
@@ -45,7 +47,7 @@ impl Plugin for PlayerPlugin {
 
 #[derive(Component)]
 pub struct Player {
-    pub pos: UVec2,
+    pub pos: IVec2,
 }
 
 #[derive(Component)]
@@ -71,9 +73,11 @@ pub struct StatusEvent(pub Status);
 // ·······
 
 fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
+    let pos = ROOM_SEP.as_ivec2() / 2;
     cmd.spawn((
         SpriteBundle {
-            transform: Transform::from_xyz(0., 0., 10.).with_scale(Vec3::splat(SCALE)),
+            transform: Transform::from_translation(tile_to_pos(pos).extend(10.))
+                .with_scale(Vec3::splat(SCALE)),
             texture: sprite_assets.one_bit.clone(),
             ..default()
         },
@@ -81,9 +85,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
             layout: sprite_assets.one_bit_atlas.clone(),
             index: 25,
         },
-        Player {
-            pos: UVec2::new(5, 3),
-        },
+        Player { pos },
         StateScoped(GameState::Play), // Every time the level changes this entity is destroyed
     ));
 }
@@ -122,8 +124,7 @@ fn move_player(
         .max_range
         .saturating_sub(save_data.level)
         .clamp(0, 4);
-    let percents = [0.5, 0.35, 0.2, 0.1, 0.0];
-    let random_input = percents[rooms_left as usize] > rand::random::<f32>();
+    let random_input = LOW_CONNECTION_PERCENTS[rooms_left as usize] > rand::random::<f32>();
 
     let dir = if random_input {
         cmd.entity(entity).insert(WrongMove(Timer::from_seconds(
@@ -144,9 +145,7 @@ fn move_player(
     };
 
     let movement = dir_to_vec(&dir, 1.).as_ivec2();
-    pos = (pos.as_ivec2() + movement)
-        .clamp(IVec2::ZERO, IVec2::MAX)
-        .as_uvec2();
+    pos += movement;
 
     let mut is_collision = false;
     for (enemy_entity, enemy) in enemies.iter() {
@@ -169,16 +168,16 @@ fn move_player(
         });
         let Some(tile) = tilemap.get_tile(pos) else { return };
         let Ok(tile) = tiles.get(tile) else { return };
-        match tile.tile {
-            TileType::LadderUp => {
+        match tile {
+            Tile::LadderUp => {
                 next_level_writer.send(NextLevelEvent { shop: true });
                 return;
             },
-            TileType::LadderDown => {
+            Tile::LadderDown => {
                 next_level_writer.send(NextLevelEvent { shop: false });
                 return;
             },
-            TileType::Collision => is_collision = true,
+            Tile::Wall => is_collision = true,
             _ => {},
         };
     };
