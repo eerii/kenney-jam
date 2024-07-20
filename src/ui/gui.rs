@@ -199,7 +199,6 @@ fn update_displays(
                     } else {
                         Srgba::new(0.141, 0.118, 0.118, 1.).into()
                     };
-                    info!("{color:?}");
                 }
                 0.
             },

@@ -26,7 +26,6 @@ impl Plugin for InputPlugin {
                 init.run_if(run_once()),
             );
 
-        #[cfg(feature = "menu")]
         app.add_systems(
             Update,
             handle_input.in_set(crate::PlaySet::Tick),
@@ -87,6 +86,7 @@ fn init(mut cmd: Commands) {
             GamepadButtonType::DPadLeft,
         )
         .insert(Action::NextAttack, KeyCode::ArrowRight)
+        .insert(Action::NextAttack, KeyCode::ArrowDown)
         .insert(
             Action::NextAttack,
             GamepadButtonType::North,
@@ -95,6 +95,7 @@ fn init(mut cmd: Commands) {
             Action::PreviousAttack,
             KeyCode::ArrowLeft,
         )
+        .insert(Action::PreviousAttack, KeyCode::ArrowUp)
         .insert(
             Action::PreviousAttack,
             GamepadButtonType::South,
@@ -104,7 +105,6 @@ fn init(mut cmd: Commands) {
 }
 
 /// Read the input and perform actions
-#[cfg(feature = "menu")]
 fn handle_input(
     input: Query<&ActionState<Action>>,
     mut next_state: ResMut<NextState<PlayState>>,
@@ -114,6 +114,7 @@ fn handle_input(
 
     let Ok(input) = input.get_single() else { return };
 
+    #[cfg(feature = "menu")]
     if input.just_pressed(&Action::Pause) {
         next_state.set(PlayState::Menu)
     }
