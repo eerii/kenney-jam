@@ -53,11 +53,19 @@ pub enum EnemyType {
     Man,
 }
 
+pub enum Element {
+    Basic,
+    Fire,
+    Water,
+    Grass,
+}
+
 #[derive(Component)]
 pub struct Enemy {
     pub pos: IVec2,
     pub health: u32,
     pub typ: EnemyType,
+    pub elem: Element,
 }
 
 // ······
@@ -142,7 +150,7 @@ pub fn get_enemy(pos: IVec2, level: u32) -> (Enemy, usize) {
         EnemyType::Man => (26 + rng.gen_range(0..6), 5),
     };
 
-    (Enemy { pos, health, typ }, index)
+    (Enemy { pos, health, typ, elem: enemy_elem() }, index)
 }
 
 fn enemy_type(level: u32) -> EnemyType {
@@ -162,5 +170,15 @@ fn enemy_type(level: u32) -> EnemyType {
         2 => EnemyType::Dog,
         3 => EnemyType::YoungOld,
         _ => EnemyType::Man,
+    }
+}
+
+fn enemy_elem() -> Element {
+    let mut rng = rand::thread_rng();
+    match rng.gen_range(0..4) {
+        0 => Element::Fire,
+        1 => Element::Water,
+        2 => Element::Grass,
+        _ => Element::Basic,
     }
 }

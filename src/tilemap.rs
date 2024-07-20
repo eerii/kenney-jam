@@ -10,7 +10,7 @@ use rand::{seq::SliceRandom, Rng};
 use crate::{
     assets::{SpriteAssets, ATLAS_SIZE},
     data::{Persistent, SaveData},
-    enemy::get_enemy,
+    enemy::{get_enemy, Element},
     misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
     GameState, PlaySet, PlayState, SCALE,
@@ -338,6 +338,15 @@ fn create_tile(
                 transform: Transform::from_translation(tile_to_pos(pos).extend(5.))
                     .with_scale(Vec3::splat(SCALE)),
                 texture: sprite_assets.one_bit.clone(),
+                sprite: Sprite {
+                    color: match enemy.elem {
+                        Element::Basic => Color::srgb(0.812, 0.776, 0.722),
+                        Element::Fire => Color::srgb(0.902, 0.282, 0.18),
+                        Element::Water => Color::srgb(0.235, 0.675, 0.843),
+                        Element::Grass => Color::srgb(0.22, 0.851, 0.451),
+                    },
+                    ..default()
+                },
                 ..default()
             },
             TextureAtlas {
