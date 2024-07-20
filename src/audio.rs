@@ -65,13 +65,14 @@ struct FadeOut {
 /// CHANGE: Enable or disable background music and other sounds
 fn init_play(
     mut cmd: Commands,
-    ambient: Query<&AudioSink, With<AmbientMusic>>,
+    ambient: Query<(Entity, &AudioSink), With<AmbientMusic>>,
     assets: Res<SoundAssets>,
 ) {
     match ambient.get_single() {
-        Ok(a) => {
-            a.play();
-            a.set_volume(1.);
+        Ok((entity, ambient)) => {
+            ambient.play();
+            ambient.set_volume(1.);
+            cmd.entity(entity).remove::<FadeOut>();
         },
         Err(_) => {
             cmd.spawn((

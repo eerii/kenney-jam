@@ -159,11 +159,18 @@ fn move_player(
     if !is_collision {
         let Some(tile) = tilemap.get_tile(pos) else { return };
         let Ok(tile) = tiles.get(tile) else { return };
-        if let TileType::LadderDown = tile.tile {
-            next_level_writer.send(NextLevelEvent);
-            return;
-        }
-        is_collision = matches!(tile.tile, TileType::Collision);
+        match tile.tile {
+            TileType::LadderUp => {
+                next_level_writer.send(NextLevelEvent { shop: true });
+                return;
+            },
+            TileType::LadderDown => {
+                next_level_writer.send(NextLevelEvent { shop: false });
+                return;
+            },
+            TileType::Collision => is_collision = true,
+            _ => {},
+        };
     };
 
     cmd.entity(entity).insert(MoveTo::new(

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "persist"))]
 pub use self::alt::Persistent;
-use crate::GameState;
+use crate::{GameState, PlayState};
 
 // ······
 // Plugin
@@ -20,7 +20,9 @@ pub struct DataPlugin;
 
 impl Plugin for DataPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Startup), init_data);
+        app.add_event::<RestartEvent>()
+            .add_systems(OnEnter(GameState::Startup), init_data)
+            .add_systems(Update, on_restart);
     }
 }
 
@@ -115,9 +117,17 @@ mod alt {
     }
 }
 
+// ······
+// Events
+// ······
+
+#[derive(Event)]
+pub struct RestartEvent;
+
 // ·······
 // Systems
 // ·······
+
 #[cfg(feature = "persist")]
 pub(crate) fn init_data(mut cmd: Commands) {
     let path = std::path::Path::new(if cfg!(target_arch = "wasm32") { "local" } else { ".data" });
@@ -155,4 +165,21 @@ pub(crate) fn init_data(mut cmd: Commands) {
 pub(crate) fn init_data(mut cmd: Commands) {
     cmd.insert_resource(Persistent(GameOptions::default()));
     cmd.insert_resource(Persistent(SaveData::default()));
+}
+
+fn on_restart(
+    mut next_state: ResMut<NextState<GameState>>,
+    mut next_play_state: ResMut<NextState<PlayState>>,
+    mut save_data: ResMut<Persistent<SaveData>>,
+    mut restart_reader: EventReader<RestartEvent>,
+) {
+    if restart_reader.read().next().is_some() {
+        next_state.set(GameState::Play);
+        next_play_state.set(PlayState::Play);
+        let battery = save_data.max_battery;
+        let _ = save_data.update(|data| {
+            data.level = 0;
+            data.battery = battery;
+        });
+    }
 }

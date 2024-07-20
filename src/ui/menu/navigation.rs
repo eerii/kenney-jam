@@ -39,7 +39,7 @@ impl Plugin for NavigationPlugin {
                 handle_input.before(NavRequestSystem),
                 update_focus.after(NavRequestSystem),
             )
-                .run_if(in_state(PlayState::Menu)),
+                .run_if(in_state(PlayState::Menu).or_else(in_state(GameState::Shop))),
         );
     }
 }

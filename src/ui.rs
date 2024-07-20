@@ -10,12 +10,12 @@ pub mod gui;
 pub mod loading;
 #[cfg(feature = "menu")]
 pub mod menu;
+pub mod shop;
 #[cfg(feature = "tts")]
 pub mod tts;
 pub mod widgets;
 
-#[allow(dead_code)]
-const UI_GAP: Val = Val::Px(16.);
+const UI_GAP: Val = Val::Px(32.);
 
 // ······
 // Plugin
@@ -27,8 +27,12 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((SickleUiPlugin, gui::GuiPlugin))
-            .add_systems(OnExit(GameState::Startup), init);
+        app.add_plugins((
+            SickleUiPlugin,
+            gui::GuiPlugin,
+            shop::ShopPlugin,
+        ))
+        .add_systems(OnExit(GameState::Startup), init);
 
         #[cfg(feature = "loading")]
         app.add_plugins(loading::LoadingScreenPlugin);

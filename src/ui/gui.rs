@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 use sickle_ui::prelude::*;
 
+use super::UI_GAP;
 use crate::{
-    assets::{SpriteAssets, ATLAS_SIZE},
+    assets::{CoreAssets, SpriteAssets, ATLAS_SIZE},
     data::{GameOptions, Persistent, SaveData},
-    ui::UiRootContainer,
+    ui::{widgets::UiTextWidget, UiRootContainer},
     PlaySet, PlayState, SCALE,
 };
 
@@ -51,8 +52,10 @@ struct Display {
 fn init(
     mut cmd: Commands,
     root: Query<Entity, With<UiRootContainer>>,
+    assets: Res<CoreAssets>,
     sprite_assets: Res<SpriteAssets>,
     options: Res<Persistent<GameOptions>>,
+    save_data: Res<Persistent<SaveData>>,
 ) {
     let Ok(root) = root.get_single() else { return };
 
@@ -74,7 +77,7 @@ fn init(
                 .width(Val::Px(24. * SCALE))
                 .align_items(AlignItems::Center)
                 .justify_content(JustifyContent::Center)
-                .row_gap(Val::Px(12.));
+                .row_gap(UI_GAP);
 
             for display in displays {
                 column.spawn((
@@ -94,6 +97,11 @@ fn init(
                     display,
                 ));
             }
+
+            column.title(
+                format!("{}", save_data.level + 1),
+                assets.font.clone(),
+            );
         })
         .insert(StateScoped(PlayState::Play))
         .style()

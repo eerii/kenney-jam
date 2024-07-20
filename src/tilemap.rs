@@ -81,7 +81,9 @@ pub struct Tile {
 // ······
 
 #[derive(Event)]
-pub struct NextLevelEvent;
+pub struct NextLevelEvent {
+    pub shop: bool,
+}
 
 // ·······
 // Systems
@@ -135,8 +137,9 @@ fn on_next_level(
     mut next_state: ResMut<NextState<GameState>>,
     mut next_level_reader: EventReader<NextLevelEvent>,
 ) {
-    if let Some(NextLevelEvent) = next_level_reader.read().next() {
-        next_state.set(GameState::LevelTransition);
+    // TODO: Confirm that you want to continue
+    if let Some(event) = next_level_reader.read().next() {
+        next_state.set(if event.shop { GameState::Shop } else { GameState::LevelTransition });
     }
 }
 

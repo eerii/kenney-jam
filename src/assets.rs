@@ -155,7 +155,6 @@ impl LoadingData {
         let mut handles = Vec::new();
 
         for path in paths {
-            println!("Loading {}", path);
             handles.push(self.load(asset_server, path));
         }
 
