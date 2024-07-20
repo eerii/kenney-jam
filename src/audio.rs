@@ -150,7 +150,7 @@ fn exit_menu(mut cmd: Commands, sink: Query<Entity, With<MainMusic>>) {
 
 fn fade_out(mut cmd: Commands, sink: Query<(Entity, &AudioSink, &FadeOut)>, time: Res<Time>) {
     for (entity, audio, fade_out) in sink.iter() {
-        audio.set_volume(audio.volume() - time.delta_seconds() / 0.5);
+        audio.set_volume(audio.volume() - time.delta_seconds() / 1.5);
         if audio.volume() <= 0. {
             if fade_out.despawn {
                 cmd.entity(entity).despawn_recursive();

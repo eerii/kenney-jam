@@ -1,11 +1,12 @@
 use bevy::{
     color::palettes::css::{BLUE, GRAY, RED, SILVER, WHITE, YELLOW},
+    audio::{PlaybackMode, Volume},
     prelude::*,
 };
 use rand::Rng;
 
 use crate::{
-    assets::SpriteAssets,
+    assets::{SpriteAssets, SoundAssets},
     data::{Persistent, SaveData},
     enemy::{DamageEvent, Enemy},
     input::{Action, ActionState},
@@ -94,6 +95,7 @@ fn move_player(
     input: Query<&ActionState<Action>>,
     tiles: Query<&Tile>,
     tilemap: Res<Tilemap>,
+    sound_assets: Res<SoundAssets>,
     mut save_data: ResMut<Persistent<SaveData>>,
     mut damage_writer: EventWriter<DamageEvent>,
     mut next_level_writer: EventWriter<NextLevelEvent>,
@@ -157,6 +159,14 @@ fn move_player(
     }
 
     if !is_collision {
+        cmd.spawn(AudioBundle {
+            source: sound_assets.steps[rand::random::<usize>() % 2].clone(),
+            settings: PlaybackSettings {
+                mode: PlaybackMode::Despawn,
+                volume: Volume::new(5.),
+                ..default()
+            },
+        });
         let Some(tile) = tilemap.get_tile(pos) else { return };
         let Ok(tile) = tiles.get(tile) else { return };
         match tile.tile {
