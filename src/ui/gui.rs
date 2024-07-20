@@ -5,6 +5,7 @@ use super::UI_GAP;
 use crate::{
     assets::{CoreAssets, SpriteAssets, ATLAS_SIZE},
     data::{GameOptions, Persistent, SaveData},
+    enemy::Element,
     ui::{widgets::UiTextWidget, UiRootContainer},
     PlaySet, PlayState, SCALE,
 };
@@ -37,10 +38,7 @@ impl Plugin for GuiPlugin {
 enum DisplayType {
     Connection,
     Battery,
-    Attack,
-    Fire,
-    Water,
-    Grass,
+    Attack(Element),
 }
 
 #[derive(Component)]
@@ -80,22 +78,22 @@ fn init(
     let attacks = [
         Display {
             index: 7 * ATLAS_SIZE.0 + 34,
-            display: DisplayType::Attack,
+            display: DisplayType::Attack(Element::Basic),
             data: None,
         },
         Display {
             index: 10 * ATLAS_SIZE.0 + 15,
-            display: DisplayType::Fire,
+            display: DisplayType::Attack(Element::Fire),
             data: Some(save_data.fire_uses),
         },
         Display {
             index: 13 * ATLAS_SIZE.0 + 32,
-            display: DisplayType::Water,
+            display: DisplayType::Attack(Element::Water),
             data: Some(save_data.water_uses),
         },
         Display {
             index: ATLAS_SIZE.0 + 3,
-            display: DisplayType::Grass,
+            display: DisplayType::Attack(Element::Grass),
             data: Some(save_data.grass_uses),
         },
     ];
@@ -163,7 +161,6 @@ fn init(
                             ..default()
                         },
                         image: UiImage::new(sprite_assets.one_bit.clone()),
-                        background_color: BackgroundColor::from(Srgba::new(0.478, 0.267, 0.29, 1.)),
                         ..default()
                     },
                     TextureAtlas {
@@ -183,14 +180,29 @@ fn init(
 }
 
 fn update_displays(
-    mut displays: Query<(&mut TextureAtlas, &Display)>,
+    mut displays: Query<(
+        &mut TextureAtlas,
+        Option<&mut BackgroundColor>,
+        &Display,
+    )>,
     save_data: Res<Persistent<SaveData>>,
 ) {
-    for (mut atlas, display) in displays.iter_mut() {
-        let percent = match display.display {
+    for (mut atlas, background, display) in displays.iter_mut() {
+        let percent = match &display.display {
             DisplayType::Connection => save_data.level as f32 / save_data.max_range as f32,
             DisplayType::Battery => 1. - save_data.battery as f32 / save_data.max_battery as f32,
-            _ => 0.,
+            DisplayType::Attack(ref element) => {
+                if let Some(mut color) = background {
+                    let selected = *element == save_data.attack_selected;
+                    *color = if selected {
+                        Srgba::new(0.478, 0.267, 0.29, 1.).into()
+                    } else {
+                        Srgba::new(0.141, 0.118, 0.118, 1.).into()
+                    };
+                    info!("{color:?}");
+                }
+                0.
+            },
         };
         let offset = (percent.clamp(0., 0.99) * 4.).floor() as usize;
         atlas.index = display.index + offset;

@@ -4,7 +4,10 @@ use bevy::prelude::*;
 pub use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::prelude::*;
 
-use crate::PlayState;
+use crate::{
+    data::{Persistent, SaveData},
+    PlayState,
+};
 
 // ······
 // Plugin
@@ -43,6 +46,12 @@ pub enum Action {
     Move,
     /// Button press usually assigned to Escape or Start
     Pause,
+    AttackRegular,
+    AttackFire,
+    AttackWater,
+    AttackGrass,
+    NextAttack,
+    PreviousAttack,
 }
 
 // ·······
@@ -56,17 +65,76 @@ fn init(mut cmd: Commands) {
         .insert(Action::Move, KeyboardVirtualDPad::WASD)
         .insert(Action::Move, GamepadStick::LEFT)
         .insert(Action::Pause, KeyCode::Escape)
-        .insert(Action::Pause, GamepadButtonType::Start);
+        .insert(Action::Pause, GamepadButtonType::Start)
+        .insert(Action::AttackRegular, KeyCode::Digit1)
+        .insert(
+            Action::AttackRegular,
+            GamepadButtonType::DPadUp,
+        )
+        .insert(Action::AttackFire, KeyCode::Digit2)
+        .insert(
+            Action::AttackFire,
+            GamepadButtonType::DPadRight,
+        )
+        .insert(Action::AttackWater, KeyCode::Digit3)
+        .insert(
+            Action::AttackWater,
+            GamepadButtonType::DPadDown,
+        )
+        .insert(Action::AttackGrass, KeyCode::Digit4)
+        .insert(
+            Action::AttackGrass,
+            GamepadButtonType::DPadLeft,
+        )
+        .insert(Action::NextAttack, KeyCode::ArrowRight)
+        .insert(
+            Action::NextAttack,
+            GamepadButtonType::North,
+        )
+        .insert(
+            Action::PreviousAttack,
+            KeyCode::ArrowLeft,
+        )
+        .insert(
+            Action::PreviousAttack,
+            GamepadButtonType::South,
+        );
 
     cmd.spawn(InputManagerBundle::with_map(input_map));
 }
 
 /// Read the input and perform actions
 #[cfg(feature = "menu")]
-fn handle_input(input: Query<&ActionState<Action>>, mut next_state: ResMut<NextState<PlayState>>) {
+fn handle_input(
+    input: Query<&ActionState<Action>>,
+    mut next_state: ResMut<NextState<PlayState>>,
+    mut save_data: ResMut<Persistent<SaveData>>,
+) {
+    use crate::enemy::Element;
+
     let Ok(input) = input.get_single() else { return };
 
     if input.just_pressed(&Action::Pause) {
         next_state.set(PlayState::Menu)
+    }
+
+    if input.just_pressed(&Action::AttackRegular) {
+        let _ = save_data.update(|data| data.attack_selected = Element::Basic);
+    }
+    if input.just_pressed(&Action::AttackFire) {
+        let _ = save_data.update(|data| data.attack_selected = Element::Fire);
+    }
+    if input.just_pressed(&Action::AttackWater) {
+        let _ = save_data.update(|data| data.attack_selected = Element::Water);
+    }
+    if input.just_pressed(&Action::AttackGrass) {
+        let _ = save_data.update(|data| data.attack_selected = Element::Grass);
+    }
+
+    if input.just_pressed(&Action::NextAttack) {
+        let _ = save_data.update(|data| data.attack_selected.next());
+    }
+    if input.just_pressed(&Action::PreviousAttack) {
+        let _ = save_data.update(|data| data.attack_selected.prev());
     }
 }

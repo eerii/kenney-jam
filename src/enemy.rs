@@ -58,12 +58,29 @@ pub enum EnemyType {
     Man,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, PartialEq)]
 pub enum Element {
     Basic,
     Fire,
     Water,
     Grass,
+}
+
+impl Element {
+    pub fn next(&mut self) {
+        *self = match self {
+            Element::Basic => Element::Fire,
+            Element::Fire => Element::Water,
+            Element::Water => Element::Grass,
+            Element::Grass => Element::Basic,
+        };
+    }
+
+    pub fn prev(&mut self) {
+        self.next();
+        self.next();
+        self.next(); // Esto é terrible
+    }
 }
 
 #[derive(Component)]
@@ -146,6 +163,7 @@ fn on_damage(
                     Element::Grass => {
                         if save_data.grass_uses > 0 {
                             save_data.grass_uses -= 1;
+                            save_data.battery -= save_data.attack as u32;
                         }
                         0.
                     },
@@ -155,6 +173,7 @@ fn on_damage(
                     Element::Fire => {
                         if save_data.fire_uses > 0 {
                             save_data.fire_uses -= 1;
+                            save_data.battery -= save_data.attack as u32;
                         }
                         0.
                     },
@@ -188,6 +207,7 @@ fn on_damage(
                     Element::Water => {
                         if save_data.water_uses > 0 {
                             save_data.water_uses -= 1;
+                            save_data.battery -= save_data.attack as u32;
                         }
                         0.
                     },

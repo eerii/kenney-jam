@@ -92,7 +92,7 @@ fn move_to(
         if timer.just_finished() {
             cmd.entity(entity).remove::<MoveTo>();
         }
-        let t = timer.fraction();
+        let t = (timer.fraction() * 1.3).clamp(0., 1.);
 
         let pos = if let Some(dir) = &to.bump_dir {
             let offset = (t * PI).sin() * TILE_SEP;
@@ -101,10 +101,10 @@ fn move_to(
             to.start.lerp(to.target, t)
         };
         trans.translation = pos.extend(trans.translation.z);
-        // trans.rotation = Quat::from_rotation_arc(
-        //     Vec3::Y,
-        //     Vec3::new((t * PI).sin(), 0., 0.),
-        // );
+        trans.rotation = Quat::from_rotation_arc(
+            Vec3::Y,
+            Vec3::new((t * 2. * PI).sin() * 0.05, 0., 0.),
+        );
     }
 }
 
