@@ -14,6 +14,7 @@ pub mod menu;
 pub mod tts;
 pub mod widgets;
 
+#[allow(dead_code)]
 const UI_GAP: Val = Val::Px(16.);
 
 // ······

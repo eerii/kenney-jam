@@ -159,7 +159,7 @@ fn move_player(
     if !is_collision {
         let Some(tile) = tilemap.get_tile(pos) else { return };
         let Ok(tile) = tiles.get(tile) else { return };
-        if let TileType::Ladder = tile.tile {
+        if let TileType::LadderDown = tile.tile {
             next_level_writer.send(NextLevelEvent);
             return;
         }

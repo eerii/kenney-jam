@@ -65,7 +65,8 @@ pub enum TileType {
     #[default]
     None,
     Collision,
-    Ladder,
+    LadderDown,
+    LadderUp,
 }
 
 #[derive(Component, Default)]
@@ -89,11 +90,21 @@ pub struct NextLevelEvent;
 fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
     let mut tiles = vec![];
     let size = UVec2::new(11, 7);
-    let ladder = rand::random::<u32>() % (size.x * size.y);
+    let ladder_up = (size.x / 2) * size.y + (size.y / 2);
+    let mut ladder_down = rand::random::<u32>() % (size.x * size.y - 1);
+    if ladder_down == ladder_up {
+        ladder_down = size.x * size.y - 1;
+    }
 
     for (x, y) in (0..size.x).cartesian_product(0..size.y) {
-        let (tile, index) = if x * size.y + y == ladder {
-            (TileType::Ladder, 6 * ATLAS_SIZE.0 + 3)
+        let i = x * size.y + y;
+        let (tile, index) = if i == ladder_down {
+            (
+                TileType::LadderDown,
+                6 * ATLAS_SIZE.0 + 3,
+            )
+        } else if i == ladder_up {
+            (TileType::LadderUp, 6 * ATLAS_SIZE.0 + 2)
         } else {
             let index = rand::random::<usize>() % 9;
             let tile = if index == 8 { TileType::Collision } else { TileType::default() };
