@@ -303,11 +303,23 @@ fn generate_level(
 }
 
 fn generate_room(tiles: &mut HashMap<TileData, Tile>, size: UVec2, offset: IVec2, level: u32) {
+    let mut rng = rand::thread_rng();
+    let grow = (level / 3, level / 2);
+    let num_enemies = rng.gen_range(1 + grow.0..3 + grow.1);
+
+    let mut indices: Vec<(u32, u32)> = (1..=size.x).cartesian_product(0..=size.y).collect();
+    indices.shuffle(&mut rand::thread_rng());
+    let enemy_tiles = indices.get(0..num_enemies as usize);
+
     for (x, y) in (0..=size.x + 1).cartesian_product(0..=size.y + 1) {
         let tile = if x == 0 || x == size.x + 1 || y == 0 || y == size.y + 1 {
             Tile::Wall
-        } else if x == 3 && y == 3 {
-            Tile::Enemy
+        } else if let Some(tiles) = enemy_tiles {
+            if tiles.contains(&(x, y)) {
+                Tile::Enemy
+            } else {
+                Tile::Ground
+            }
         } else {
             Tile::Ground
         };
@@ -331,6 +343,7 @@ fn create_tile(
     tile: Tile,
     index: usize,
 ) -> Entity {
+    // If it has an enemy, spawn it
     if matches!(tile, Tile::Enemy) {
         let (enemy, index) = get_enemy(pos, level);
         cmd.spawn((

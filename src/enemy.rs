@@ -4,9 +4,8 @@ pub use bevy_persistent::prelude::Persistent;
 use rand::Rng;
 
 use crate::{
-    assets::{SoundAssets, SpriteAssets, ATLAS_SIZE},
-    data::SaveData,
-    GameState, PlaySet,
+    assets::{SoundAssets, ATLAS_SIZE},
+    PlaySet,
 };
 
 const WEIGHTS: [[u32; 5]; 12] = [
@@ -32,12 +31,10 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DamageEvent>()
-            .add_systems(OnEnter(GameState::Play), init)
-            .add_systems(
-                Update,
-                on_damage.in_set(PlaySet::Events),
-            );
+        app.add_event::<DamageEvent>().add_systems(
+            Update,
+            on_damage.in_set(PlaySet::Events),
+        );
     }
 }
 
@@ -70,18 +67,6 @@ pub struct DamageEvent(pub Entity);
 // ·······
 // Systems
 // ·······
-
-fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>, save_data: Res<Persistent<SaveData>>) {
-    // for _ in 0..3 {
-    //     // TODO: Change generation
-    //     let tile_pos = IVec2::new(
-    //         rand::random::<i32>() % 11,
-    //         rand::random::<i32>() % 7,
-    //     );
-    //     let pos = tile_to_pos(tile_pos);
-    //
-    //         // }
-}
 
 fn on_damage(
     mut cmd: Commands,

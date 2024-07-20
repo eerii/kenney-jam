@@ -39,7 +39,10 @@ pub(super) fn open(
                 .justify_content(JustifyContent::Center)
                 .row_gap(UI_GAP);
 
-            column.title("Nightmare in Silver".into(), assets.font.clone());
+            column.title(
+                "Nightmare in Silver".into(),
+                assets.font.clone(),
+            );
 
             column.button(MenuButton::Play, |button| {
                 button.text("PLAY".into(), assets.font.clone());

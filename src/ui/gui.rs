@@ -139,9 +139,7 @@ fn init(
 
     cmd.ui_builder(root)
         .column(|column| {
-            column
-                .style()
-                .flex_grow(1.);
+            column.style().flex_grow(1.);
         })
         .insert(StateScoped(PlayState::Play))
         .style();
@@ -174,10 +172,7 @@ fn init(
                     },
                     att,
                 ));
-                column.text(
-                    format!("{}", data),
-                    assets.font.clone(),
-               );
+                column.text(format!("{}", data), assets.font.clone());
             }
         })
         .insert(StateScoped(PlayState::Play))
