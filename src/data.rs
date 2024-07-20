@@ -66,7 +66,7 @@ pub struct SaveData {
     pub max_battery: u32,
     pub battery: u32,
     pub attack: f32,
-    pub fire: u32,
+    pub fire: u32,  // don't need level, use this as level
     pub water: u32,
     pub grass: u32,
     pub fire_uses: u32,
@@ -74,6 +74,9 @@ pub struct SaveData {
     pub grass_uses: u32,
     pub attack_selected: Element,
     pub money: u32,
+    pub range_lvl: usize,
+    pub battery_lvl: usize,
+    pub attack_lvl: usize,
 }
 
 impl Default for SaveData {
@@ -92,6 +95,9 @@ impl Default for SaveData {
             grass_uses: 0,
             attack_selected: Element::Basic,
             money: 0,
+            range_lvl: 1,
+            battery_lvl: 1,
+            attack_lvl: 0,
         }
     }
 }
