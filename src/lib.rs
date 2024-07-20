@@ -96,7 +96,7 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            game_title: "Hello bevy!",
+            game_title: "Nightmare in Silver",
             initial_window_res: (GAME_RES * SCALE).into(),
             #[cfg(feature = "pixel_perfect")]
             initial_game_res: GAME_RES,

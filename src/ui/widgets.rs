@@ -14,7 +14,10 @@ const FONT_SIZE_TEXT: f32 = 20.;
 const FONT_SIZE_TITLE: f32 = 32.;
 
 /// Base color for UI buttons
-pub const BUTTON_COLOR: Color = Color::srgb(0.3, 0.5, 0.9);
+pub const BUTTON_COLOR: Color = Color::srgb(0.478, 0.267, 0.29);
+
+/// Text color
+pub const TEXT_COLOR: Color = Color::srgb(0.812, 0.776, 0.722);
 
 // ······
 // Traits
@@ -34,7 +37,7 @@ impl UiTextWidget for UiBuilder<'_, Entity> {
             TextBundle::from_section(text.clone(), TextStyle {
                 font,
                 font_size: FONT_SIZE_TEXT,
-                color: Color::WHITE,
+                color: TEXT_COLOR,
             }),
             #[cfg(feature = "tts")]
             super::tts::SpeechTag(text),
@@ -46,7 +49,7 @@ impl UiTextWidget for UiBuilder<'_, Entity> {
             TextBundle::from_section(text.clone(), TextStyle {
                 font,
                 font_size: FONT_SIZE_TITLE,
-                color: Color::WHITE,
+                color: TEXT_COLOR,
             }),
             #[cfg(feature = "tts")]
             super::tts::SpeechTag(text),
@@ -101,11 +104,11 @@ impl UiButtonWidget for UiBuilder<'_, Entity> {
                         height: BUTTON_HEIGHT,
                         align_items: AlignItems::Center,
                         justify_content: JustifyContent::Center,
-                        border: UiRect::all(Val::Px(6.0)),
+                        border: UiRect::all(Val::Px(4.0)),
                         ..default()
                     },
                     background_color: BUTTON_COLOR.into(),
-                    border_radius: BorderRadius::MAX,
+                    // border_radius: BorderRadius::MAX,
                     ..default()
                 },
                 #[cfg(feature = "menu")]
