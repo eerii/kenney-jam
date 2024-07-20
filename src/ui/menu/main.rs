@@ -39,19 +39,19 @@ pub(super) fn open(
                 .justify_content(JustifyContent::Center)
                 .row_gap(UI_GAP);
 
-            column.title("Title".into(), assets.font.clone());
+            column.title("TITLE".into(), assets.font.clone());
 
             column.button(MenuButton::Play, |button| {
-                button.text("Play".into(), assets.font.clone());
+                button.text("PLAY".into(), assets.font.clone());
             });
 
             column.button(MenuButton::Options, |button| {
-                button.text("Options".into(), assets.font.clone());
+                button.text("OPTIONS".into(), assets.font.clone());
             });
 
             #[cfg(not(target_arch = "wasm32"))]
             column.button(MenuButton::ExitOrBack, |button| {
-                button.text("Exit".into(), assets.font.clone());
+                button.text("EXIT".into(), assets.font.clone());
             });
         })
         .insert(StateScoped(MenuState::Main))

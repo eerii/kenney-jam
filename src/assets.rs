@@ -79,7 +79,7 @@ pub(crate) fn load_core(mut cmd: Commands, asset_server: Res<AssetServer>) {
     // They use the asset server directly
     let assets = CoreAssets {
         bevy_icon: asset_server.load("icons/bevy.png"),
-        font: asset_server.load("fonts/sans.ttf"),
+        font: asset_server.load("fonts/kenney-pixel.ttf"),
     };
 
     cmd.insert_resource(assets);

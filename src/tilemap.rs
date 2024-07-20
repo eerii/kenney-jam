@@ -10,6 +10,7 @@ use rand::{seq::SliceRandom, Rng};
 use crate::{
     assets::{SpriteAssets, ATLAS_SIZE},
     data::{Persistent, SaveData},
+    enemy::get_enemy,
     misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
     GameState, PlaySet, PlayState, SCALE,
@@ -93,6 +94,7 @@ impl Eq for TileData {}
 pub enum Tile {
     #[default]
     Ground,
+    Enemy,
     Path,
     Wall,
     LadderDown,
@@ -112,12 +114,17 @@ pub struct NextLevelEvent {
 // Systems
 // ·······
 
-fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
+fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>, save_data: Res<Persistent<SaveData>>) {
+    let level = save_data.level;
     let tiles = generate_level(
         &mut cmd,
         &sprite_assets,
-        (3, 7),                               // TODO: Change this based on the level
-        (ROOM_SEP.x / 2 + 1, ROOM_SEP.x - 4), // TODO: Also make smaller rooms
+        level,
+        (
+            2 + (level * 0.3 as u32).clamp(0, 3),
+            5 + (level * 0.5 as u32).clamp(0, 5),
+        ),
+        (ROOM_SEP.x / 2 + 1, ROOM_SEP.x - 4),
         (ROOM_SEP.y / 2 + 1, ROOM_SEP.y - 4),
     );
     cmd.insert_resource(Tilemap { tiles });
@@ -182,6 +189,7 @@ fn tile_to_index(tile: Tile) -> usize {
         .unwrap(),
         Tile::LadderDown => &(ATLAS_SIZE.0 * 6 + 3),
         Tile::LadderUp => &(ATLAS_SIZE.0 * 6 + 2),
+        Tile::Enemy => &0,
     };
     *tile
 }
@@ -189,6 +197,7 @@ fn tile_to_index(tile: Tile) -> usize {
 fn generate_level(
     cmd: &mut Commands,
     sprite_assets: &SpriteAssets,
+    level: u32,
     rooms: (u32, u32),
     size_x: (u32, u32),
     size_y: (u32, u32),
@@ -222,7 +231,7 @@ fn generate_level(
             rng.gen_range(0..(ROOM_SEP.y - size.y)) as i32 + room_pos.y * ROOM_SEP.y as i32,
         );
 
-        generate_room(&mut tiles, size, offset);
+        generate_room(&mut tiles, size, offset, level);
     }
 
     // Generate corridors
@@ -284,7 +293,8 @@ fn generate_level(
             entity: create_tile(
                 cmd,
                 sprite_assets,
-                tile_to_pos(IVec2::new(k.x, k.y)),
+                level,
+                IVec2::new(k.x, k.y),
                 v.clone(),
                 tile_to_index(v.clone()),
             ),
@@ -292,10 +302,12 @@ fn generate_level(
         .collect()
 }
 
-fn generate_room(tiles: &mut HashMap<TileData, Tile>, size: UVec2, offset: IVec2) {
+fn generate_room(tiles: &mut HashMap<TileData, Tile>, size: UVec2, offset: IVec2, level: u32) {
     for (x, y) in (0..=size.x + 1).cartesian_product(0..=size.y + 1) {
         let tile = if x == 0 || x == size.x + 1 || y == 0 || y == size.y + 1 {
             Tile::Wall
+        } else if x == 3 && y == 3 {
+            Tile::Enemy
         } else {
             Tile::Ground
         };
@@ -304,7 +316,7 @@ fn generate_room(tiles: &mut HashMap<TileData, Tile>, size: UVec2, offset: IVec2
             TileData {
                 x: x as i32 + offset.x,
                 y: y as i32 + offset.y,
-                entity: Entity::PLACEHOLDER, // tile.id(),
+                entity: Entity::PLACEHOLDER,
             },
             tile,
         );
@@ -314,13 +326,33 @@ fn generate_room(tiles: &mut HashMap<TileData, Tile>, size: UVec2, offset: IVec2
 fn create_tile(
     cmd: &mut Commands,
     sprite_assets: &SpriteAssets,
-    pos: Vec2,
+    level: u32,
+    pos: IVec2,
     tile: Tile,
     index: usize,
 ) -> Entity {
+    if matches!(tile, Tile::Enemy) {
+        let (enemy, index) = get_enemy(pos, level);
+        cmd.spawn((
+            SpriteBundle {
+                transform: Transform::from_translation(tile_to_pos(pos).extend(5.))
+                    .with_scale(Vec3::splat(SCALE)),
+                texture: sprite_assets.one_bit.clone(),
+                ..default()
+            },
+            TextureAtlas {
+                layout: sprite_assets.one_bit_atlas.clone(),
+                index,
+            },
+            enemy,
+            StateScoped(GameState::Play),
+        ));
+    }
+
     cmd.spawn((
         SpriteBundle {
-            transform: Transform::from_translation(pos.extend(0.)).with_scale(Vec3::splat(SCALE)),
+            transform: Transform::from_translation(tile_to_pos(pos).extend(0.))
+                .with_scale(Vec3::splat(SCALE)),
             texture: sprite_assets.one_bit.clone(),
             ..default()
         },

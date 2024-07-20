@@ -10,9 +10,8 @@ use sickle_ui::prelude::*;
 const BUTTON_WIDTH: Val = Val::Px(256.);
 const BUTTON_HEIGHT: Val = Val::Px(64.);
 
-const FONT_SIZE_MULT: f32 = 1.0;
-const FONT_SIZE_TEXT: f32 = 36. * FONT_SIZE_MULT;
-const FONT_SIZE_TITLE: f32 = 64. * FONT_SIZE_MULT;
+const FONT_SIZE_TEXT: f32 = 20.;
+const FONT_SIZE_TITLE: f32 = 32.;
 
 /// Base color for UI buttons
 pub const BUTTON_COLOR: Color = Color::srgb(0.3, 0.5, 0.9);
