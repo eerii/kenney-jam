@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub const TILE_SEP: f32 = 20.;
-pub const ROOM_SEP: UVec2 = UVec2::new(19, 15);
+pub const ROOM_SEP: UVec2 = UVec2::new(15, 11);
 
 // ······
 // Plugin
@@ -259,15 +259,15 @@ fn generate_level(
         aux.remove(&a);
     }
 
-    // Insertar escaleira arriba
+    // Insert ladder up
     tiles.insert(
         TileData::pos(ROOM_SEP.as_ivec2() / 2),
         Tile::LadderUp,
     );
 
-    // Insertar escaleira abaixo
+    // Insert ladder down
+    // This iterator is supposed to be random
     for (_, tile) in tiles.iter_mut() {
-        // Esto supostamente é aleatorio
         if !matches!(tile, Tile::Ground) {
             continue;
         }
