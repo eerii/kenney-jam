@@ -7,7 +7,10 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "persist"))]
 pub use self::alt::Persistent;
-use crate::{GameState, PlayState};
+use crate::{
+    enemy::Element,
+    GameState, PlayState,
+};
 
 // ······
 // Plugin
@@ -72,7 +75,8 @@ pub struct SaveData {
     pub fire_uses: u32,
     pub water_uses: u32,
     pub grass_uses: u32,
-    pub attack_selected: u32,
+    pub attack_selected: Element,
+    pub money: u32,
 }
 
 impl Default for SaveData {
@@ -89,7 +93,8 @@ impl Default for SaveData {
             fire_uses: 0,
             water_uses: 0,
             grass_uses: 0,
-            attack_selected: 1,
+            attack_selected: Element::Basic,
+            money: 0,
         }
     }
 }

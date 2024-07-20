@@ -50,6 +50,7 @@ pub enum EnemyType {
     Man,
 }
 
+#[derive(serde::Deserialize, serde::Serialize)]
 pub enum Element {
     Basic,
     Fire,
@@ -60,7 +61,7 @@ pub enum Element {
 #[derive(Component)]
 pub struct Enemy {
     pub pos: IVec2,
-    pub health: u32,
+    pub health: f32,
     pub typ: EnemyType,
     pub elem: Element,
 }
@@ -81,26 +82,119 @@ fn on_damage(
     mut enemies: Query<&mut Enemy>,
     sound_assets: Res<SoundAssets>,
     mut damage_reader: EventReader<DamageEvent>,
+    mut save_data: ResMut<Persistent<SaveData>>,
 ) {
     for DamageEvent(entity) in damage_reader.read() {
         if let Ok(mut enemy) = enemies.get_mut(*entity) {
-            enemy.health -= 1;
-            if enemy.health == 0 {
+            enemy.health -= match enemy.elem {
+                Element::Basic => match save_data.attack_selected {
+                    Element::Basic => save_data.attack,
+                    Element::Fire => {
+                        if save_data.fire_uses > 0 {
+                            save_data.fire_uses -= 1;
+                            save_data.attack
+                        } else { 0. }
+                    },
+                    Element::Water => {
+                        if save_data.water_uses > 0 {
+                            save_data.water_uses -= 1;
+                            save_data.attack
+                        } else { 0. }
+                    },
+                    Element::Grass => {
+                        if save_data.grass_uses > 0 {
+                            save_data.grass_uses -= 1;
+                            save_data.attack
+                        } else { 0. }
+                    },
+                },
+                Element::Fire => match save_data.attack_selected {
+                    Element::Basic => save_data.attack,
+                    Element::Fire => {
+                        if save_data.fire_uses > 0 {
+                            save_data.fire_uses -= 1;
+                            save_data.attack
+                        } else { 0. }
+                    },
+                    Element::Water => {
+                        if save_data.water_uses > 0 {
+                            save_data.water_uses -= 1;
+                            save_data.attack * 1.5
+                        } else { 0. }
+                    },
+                    Element::Grass => {
+                        if save_data.grass_uses > 0 {
+                            save_data.grass_uses -= 1;
+                        }
+                        0.
+                    },
+                },
+                Element::Water => match save_data.attack_selected {
+                    Element::Basic => save_data.attack,
+                    Element::Fire => {
+                        if save_data.fire_uses > 0 {
+                            save_data.fire_uses -= 1;
+                        }
+                        0.
+                    },
+                    Element::Water => {
+                        if save_data.water_uses > 0 {
+                            save_data.water_uses -= 1;
+                            save_data.attack
+                        } else { 0. }
+                    },
+                    Element::Grass => {
+                        if save_data.grass_uses > 0 {
+                            save_data.grass_uses -= 1;
+                            save_data.attack * 1.5
+                        } else { 0. }
+                    },
+                },
+                Element::Grass => match save_data.attack_selected {
+                    Element::Basic => save_data.attack,
+                    Element::Fire => {
+                        if save_data.fire_uses > 0 {
+                            save_data.fire_uses -= 1;
+                            save_data.attack * 1.5
+                        } else { 0. }
+                    },
+                    Element::Water => {
+                        if save_data.water_uses > 0 {
+                            save_data.water_uses -= 1;
+                        }
+                        0.
+                    },
+                    Element::Grass => {
+                        if save_data.grass_uses > 0 {
+                            save_data.grass_uses -= 1;
+                            save_data.attack
+                        } else { 0. }
+                    },
+                },
+            };
+            if enemy.health <= 0. {
                 cmd.entity(*entity).despawn();
+                let mut rng = rand::thread_rng();
                 cmd.spawn(AudioBundle {
-                    // source: sound_assets.cat[rand::random::<usize>() % 3].clone(),
                     source: match enemy.typ {
                         EnemyType::Chicken => {
-                            sound_assets.chicken[rand::random::<usize>() % 2].clone()
+                            sound_assets.chicken[rng.gen_range(0..2)].clone()
                         },
-                        EnemyType::Cat => sound_assets.cat[rand::random::<usize>() % 3].clone(),
-                        EnemyType::Dog => sound_assets.dog[rand::random::<usize>() % 3].clone(),
+                        EnemyType::Cat => sound_assets.cat[rng.gen_range(0..3)].clone(),
+                        EnemyType::Dog => sound_assets.dog[rng.gen_range(0..3)].clone(),
                         EnemyType::YoungOld | EnemyType::Man => {
-                            sound_assets.man[rand::random::<usize>() % 2].clone()
+                            sound_assets.man[rng.gen_range(0..2)].clone()
                         },
                     },
                     settings: PlaybackSettings::DESPAWN,
                 });
+                save_data.money += match enemy.typ {
+                    EnemyType::Chicken => rng.gen_range(4..6),
+                    EnemyType::Cat => rng.gen_range(8..11),
+                    EnemyType::Dog => rng.gen_range(14..17),
+                    EnemyType::YoungOld => rng.gen_range(18..21),
+                    EnemyType::Man => rng.gen_range(24..27),
+                };
             }
         }
 
@@ -121,29 +215,21 @@ pub fn get_enemy(pos: IVec2, level: u32) -> (Enemy, usize) {
     let (index, health) = match typ {
         EnemyType::Chicken => (
             7 * ATLAS_SIZE.0 + 25 + rng.gen_range(0..2),
-            1,
+            1.,
         ),
         EnemyType::Cat => (
             7 * ATLAS_SIZE.0 + 29 + rng.gen_range(0..2),
-            2,
+            2.,
         ),
-        EnemyType::Dog => (7 * ATLAS_SIZE.0 + 31, 3),
+        EnemyType::Dog => (7 * ATLAS_SIZE.0 + 31, 3.),
         EnemyType::YoungOld => (
             4 * ATLAS_SIZE.0 + 28 + rng.gen_range(0..2),
-            4,
+            4.,
         ),
-        EnemyType::Man => (26 + rng.gen_range(0..6), 5),
+        EnemyType::Man => (26 + rng.gen_range(0..6), 5.),
     };
 
-    (
-        Enemy {
-            pos,
-            health,
-            typ,
-            elem: enemy_elem(),
-        },
-        index,
-    )
+    (Enemy { pos, health, typ, elem: enemy_elem() }, index)
 }
 
 fn enemy_type(level: u32) -> EnemyType {
