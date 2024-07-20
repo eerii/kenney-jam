@@ -5,7 +5,9 @@ use rand::Rng;
 
 use crate::{
     assets::{SoundAssets, ATLAS_SIZE},
-    PlaySet,
+    data::SaveData,
+    misc::MIN_TURN_TIMER,
+    PlaySet, TurnState,
 };
 
 const WEIGHTS: [[u32; 5]; 12] = [
@@ -31,10 +33,16 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DamageEvent>().add_systems(
-            Update,
-            on_damage.in_set(PlaySet::Events),
-        );
+        app.add_event::<DamageEvent>()
+            .add_systems(OnEnter(TurnState::Enemy), enemy_turn)
+            .add_systems(
+                Update,
+                update_enemies.run_if(in_state(TurnState::Enemy)),
+            )
+            .add_systems(
+                Update,
+                on_damage.in_set(PlaySet::Events),
+            );
     }
 }
 
@@ -66,6 +74,9 @@ pub struct Enemy {
     pub elem: Element,
 }
 
+#[derive(Component)]
+struct EnemyTurn(Timer);
+
 // ······
 // Events
 // ······
@@ -93,19 +104,25 @@ fn on_damage(
                         if save_data.fire_uses > 0 {
                             save_data.fire_uses -= 1;
                             save_data.attack
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                     Element::Water => {
                         if save_data.water_uses > 0 {
                             save_data.water_uses -= 1;
                             save_data.attack
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                     Element::Grass => {
                         if save_data.grass_uses > 0 {
                             save_data.grass_uses -= 1;
                             save_data.attack
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                 },
                 Element::Fire => match save_data.attack_selected {
@@ -114,13 +131,17 @@ fn on_damage(
                         if save_data.fire_uses > 0 {
                             save_data.fire_uses -= 1;
                             save_data.attack
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                     Element::Water => {
                         if save_data.water_uses > 0 {
                             save_data.water_uses -= 1;
                             save_data.attack * 1.5
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                     Element::Grass => {
                         if save_data.grass_uses > 0 {
@@ -141,13 +162,17 @@ fn on_damage(
                         if save_data.water_uses > 0 {
                             save_data.water_uses -= 1;
                             save_data.attack
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                     Element::Grass => {
                         if save_data.grass_uses > 0 {
                             save_data.grass_uses -= 1;
                             save_data.attack * 1.5
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                 },
                 Element::Grass => match save_data.attack_selected {
@@ -156,7 +181,9 @@ fn on_damage(
                         if save_data.fire_uses > 0 {
                             save_data.fire_uses -= 1;
                             save_data.attack * 1.5
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                     Element::Water => {
                         if save_data.water_uses > 0 {
@@ -168,7 +195,9 @@ fn on_damage(
                         if save_data.grass_uses > 0 {
                             save_data.grass_uses -= 1;
                             save_data.attack
-                        } else { 0. }
+                        } else {
+                            0.
+                        }
                     },
                 },
             };
@@ -177,9 +206,7 @@ fn on_damage(
                 let mut rng = rand::thread_rng();
                 cmd.spawn(AudioBundle {
                     source: match enemy.typ {
-                        EnemyType::Chicken => {
-                            sound_assets.chicken[rng.gen_range(0..2)].clone()
-                        },
+                        EnemyType::Chicken => sound_assets.chicken[rng.gen_range(0..2)].clone(),
                         EnemyType::Cat => sound_assets.cat[rng.gen_range(0..3)].clone(),
                         EnemyType::Dog => sound_assets.dog[rng.gen_range(0..3)].clone(),
                         EnemyType::YoungOld | EnemyType::Man => {
@@ -202,6 +229,27 @@ fn on_damage(
             source: sound_assets.attack.clone(),
             settings: PlaybackSettings::DESPAWN,
         });
+    }
+}
+
+fn enemy_turn(mut cmd: Commands) {
+    cmd.spawn(EnemyTurn(Timer::from_seconds(
+        MIN_TURN_TIMER,
+        TimerMode::Once,
+    )));
+}
+
+fn update_enemies(
+    mut cmd: Commands,
+    mut timer: Query<(Entity, &mut EnemyTurn)>,
+    time: Res<Time>,
+    mut next_turn_state: ResMut<NextState<TurnState>>,
+) {
+    let Ok((entity, mut timer)) = timer.get_single_mut() else { return };
+    let timer = timer.0.tick(time.delta());
+    if timer.just_finished() {
+        next_turn_state.set(TurnState::Player);
+        cmd.entity(entity).despawn();
     }
 }
 
@@ -229,7 +277,15 @@ pub fn get_enemy(pos: IVec2, level: u32) -> (Enemy, usize) {
         EnemyType::Man => (26 + rng.gen_range(0..6), 5.),
     };
 
-    (Enemy { pos, health, typ, elem: enemy_elem() }, index)
+    (
+        Enemy {
+            pos,
+            health,
+            typ,
+            elem: enemy_elem(),
+        },
+        index,
+    )
 }
 
 fn enemy_type(level: u32) -> EnemyType {

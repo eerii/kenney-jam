@@ -8,6 +8,8 @@ use rand::{
 
 use crate::{tilemap::TILE_SEP, GameState};
 
+pub const MIN_TURN_TIMER: f32 = 0.2;
+
 // ······
 // Plugin
 // ······
@@ -71,7 +73,7 @@ impl MoveTo {
             start,
             target,
             bump_dir,
-            timer: Timer::from_seconds(0.15, TimerMode::Once),
+            timer: Timer::from_seconds(MIN_TURN_TIMER, TimerMode::Once),
         }
     }
 }
@@ -99,6 +101,10 @@ fn move_to(
             to.start.lerp(to.target, t)
         };
         trans.translation = pos.extend(trans.translation.z);
+        // trans.rotation = Quat::from_rotation_arc(
+        //     Vec3::Y,
+        //     Vec3::new((t * PI).sin(), 0., 0.),
+        // );
     }
 }
 

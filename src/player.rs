@@ -12,7 +12,7 @@ use crate::{
     input::{Action, ActionState},
     misc::{dir_to_vec, Direction, MoveTo},
     tilemap::{tile_to_pos, Tile, Tilemap, ROOM_SEP},
-    GameState, PlaySet, PlayState, SCALE,
+    GameState, PlaySet, PlayState, TurnState, SCALE,
 };
 
 const LOW_CONNECTION_PERCENTS: [f32; 5] = [0.5, 0.35, 0.2, 0.1, 0.0];
@@ -31,7 +31,9 @@ impl Plugin for PlayerPlugin {
                 Update,
                 (
                     tick_wrong_move.in_set(PlaySet::Tick),
-                    move_player.in_set(PlaySet::Move),
+                    move_player
+                        .in_set(PlaySet::Move)
+                        .run_if(in_state(TurnState::Player)),
                     check_player
                         .in_set(PlaySet::Collision)
                         .run_if(resource_changed::<Persistent<SaveData>>),
@@ -100,6 +102,7 @@ fn move_player(
     sound_assets: Res<SoundAssets>,
     mut save_data: ResMut<Persistent<SaveData>>,
     mut next_play_state: ResMut<NextState<PlayState>>,
+    mut next_turn_state: ResMut<NextState<TurnState>>,
     mut damage_writer: EventWriter<DamageEvent>,
 ) {
     if save_data.battery == 0 {
@@ -113,7 +116,7 @@ fn move_player(
 
     let mut pos = player.pos;
 
-    if !input.just_pressed(&Action::Move) {
+    if !input.pressed(&Action::Move) {
         return;
     }
     let Some(axis) = input.clamped_axis_pair(&Action::Move) else { return };
@@ -185,6 +188,7 @@ fn move_player(
         tile_to_pos(pos),
         if is_collision { Some(dir) } else { None },
     ));
+    next_turn_state.set(TurnState::Enemy);
 
     if !is_collision {
         player.pos = pos;

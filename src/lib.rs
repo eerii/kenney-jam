@@ -70,6 +70,14 @@ impl Default for PlayState {
     }
 }
 
+#[derive(SubStates, Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[source(PlayState = PlayState::Play)]
+pub enum TurnState {
+    #[default]
+    Player,
+    Enemy,
+}
+
 /// Custom update schedules
 /// Useful for ordering inside Update
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash)]
@@ -207,7 +215,8 @@ impl Plugin for GamePlugin {
         app.insert_state(GameState::default())
             .enable_state_scoped_entities::<GameState>()
             .add_sub_state::<PlayState>()
-            .enable_state_scoped_entities::<PlayState>();
+            .enable_state_scoped_entities::<PlayState>()
+            .add_sub_state::<TurnState>();
 
         // Add the rest of the plugins
         app.add_plugins((

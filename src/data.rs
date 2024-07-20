@@ -7,10 +7,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "persist"))]
 pub use self::alt::Persistent;
-use crate::{
-    enemy::Element,
-    GameState, PlayState,
-};
+use crate::{enemy::Element, GameState, PlayState};
 
 // ······
 // Plugin

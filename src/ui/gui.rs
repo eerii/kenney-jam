@@ -47,7 +47,7 @@ enum DisplayType {
 struct Display {
     index: usize,
     display: DisplayType,
-    data: f32,
+    data: Option<u32>,
 }
 
 // ·······
@@ -68,12 +68,12 @@ fn init(
         Display {
             index: 22 * ATLAS_SIZE.0,
             display: DisplayType::Connection,
-            data: 0.,
+            data: None,
         },
         Display {
             index: 22 * ATLAS_SIZE.0 + 4,
             display: DisplayType::Battery,
-            data: 0.,
+            data: None,
         },
     ];
 
@@ -81,22 +81,22 @@ fn init(
         Display {
             index: 7 * ATLAS_SIZE.0 + 34,
             display: DisplayType::Attack,
-            data: save_data.attack,
+            data: None,
         },
         Display {
             index: 10 * ATLAS_SIZE.0 + 15,
             display: DisplayType::Fire,
-            data: save_data.fire_uses as f32,
+            data: Some(save_data.fire_uses),
         },
         Display {
             index: 13 * ATLAS_SIZE.0 + 32,
             display: DisplayType::Water,
-            data: save_data.water_uses as f32,
+            data: Some(save_data.water_uses),
         },
         Display {
             index: ATLAS_SIZE.0 + 3,
             display: DisplayType::Grass,
-            data: save_data.grass_uses as f32,
+            data: Some(save_data.grass_uses),
         },
     ];
 
@@ -172,7 +172,9 @@ fn init(
                     },
                     att,
                 ));
-                column.text(format!("{}", data), assets.font.clone());
+                if let Some(data) = data {
+                    column.text(format!("{}", data), assets.font.clone());
+                }
             }
         })
         .insert(StateScoped(PlayState::Play))
