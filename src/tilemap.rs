@@ -1,7 +1,12 @@
 use bevy::prelude::*;
 use itertools::Itertools;
 
-use crate::{assets::SpriteAssets, GameState, PlaySet, PlayState, SCALE};
+use crate::{
+    assets::SpriteAssets,
+    data::{Persistent, SaveData},
+    player::{Status, StatusEvent},
+    GameState, PlaySet, PlayState, SCALE,
+};
 
 pub const TILE_SEP: f32 = 20.;
 
@@ -32,16 +37,17 @@ impl Plugin for TilemapPlugin {
 
 #[derive(Resource)]
 pub struct Tilemap {
+    // TODO: Convert to hashset or something more sparse
     tiles: Vec<Entity>,
     size: UVec2,
 }
 
 impl Tilemap {
-    pub fn get_tile(&self, x: u32, y: u32) -> Option<Entity> {
-        if y >= self.size.y {
+    pub fn get_tile(&self, pos: UVec2) -> Option<Entity> {
+        if pos.y >= self.size.y {
             return None;
         };
-        let i = (x * self.size.y + y) as usize;
+        let i = (pos.x * self.size.y + pos.y) as usize;
         if i < self.tiles.len() {
             Some(self.tiles[i])
         } else {
@@ -96,7 +102,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
 
         let tile = cmd.spawn((
             SpriteBundle {
-                transform: Transform::from_translation(tile_to_pos(x, y).extend(0.))
+                transform: Transform::from_translation(tile_to_pos(UVec2::new(x, y)).extend(0.))
                     .with_scale(Vec3::splat(SCALE)),
                 texture: sprite_assets.one_bit.clone(),
                 ..default()
@@ -126,23 +132,31 @@ fn on_next_level(
 fn level_transition(
     mut next_state: ResMut<NextState<GameState>>,
     mut next_play_state: ResMut<NextState<PlayState>>,
+    mut save_data: ResMut<Persistent<SaveData>>,
+    mut status_writer: EventWriter<StatusEvent>,
 ) {
     next_state.set(GameState::Play);
     next_play_state.set(PlayState::Play);
+    let _ = save_data.update(|data| data.level += 1);
+    if save_data.level >= save_data.max_connection {
+        status_writer.send(StatusEvent(Status::ConnectionEmpty));
+    } else if save_data.level + 2 >= save_data.max_connection {
+        status_writer.send(StatusEvent(Status::ConnectionLow));
+    }
 }
 
 // ·······
 // Helpers
 // ·······
 
-pub fn pos_to_tile(pos: Vec2) -> (u32, u32) {
+pub fn pos_to_tile(pos: Vec2) -> UVec2 {
     let pos = pos / TILE_SEP / SCALE;
-    ((pos.x + 5.) as u32, (pos.y + 3.) as u32)
+    UVec2::new((pos.x + 5.) as u32, (pos.y + 3.) as u32)
 }
 
-pub fn tile_to_pos(x: u32, y: u32) -> Vec2 {
+pub fn tile_to_pos(pos: UVec2) -> Vec2 {
     Vec2::new(
-        (x as f32 - 5.) * TILE_SEP * SCALE,
-        (y as f32 - 3.) * TILE_SEP * SCALE,
+        (pos.x as f32 - 5.) * TILE_SEP * SCALE,
+        (pos.y as f32 - 3.) * TILE_SEP * SCALE,
     )
 }

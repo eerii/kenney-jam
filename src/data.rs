@@ -57,9 +57,29 @@ impl Default for GameOptions {
 /// Save data
 /// A place to save the player's progress
 /// CHANGE: Add relevant save data here
-#[derive(Default, Resource, Serialize, Deserialize)]
+#[derive(Resource, Serialize, Deserialize)]
 pub struct SaveData {
-    name: String,
+    pub level: u32,
+    pub max_connection: u32,
+    pub max_battery: u32,
+    pub battery: u32,
+    pub max_health: f32,
+    pub health: f32,
+    pub attack: f32,
+}
+
+impl Default for SaveData {
+    fn default() -> Self {
+        Self {
+            level: 1,
+            max_connection: 5,
+            battery: 30,
+            max_battery: 30,
+            health: 5.,
+            max_health: 5.,
+            attack: 1.,
+        }
+    }
 }
 
 /// When persist is not enabled, this wrapper just serves
@@ -119,17 +139,21 @@ pub(crate) fn init_data(mut cmd: Commands) {
             .expect("failed to initialize game options"),
     );
 
-    cmd.insert_resource(
-        Persistent::<SaveData>::builder()
-            .name("save data")
-            .format(bevy_persistent::StorageFormat::Toml)
-            .path(path.join("save.toml"))
-            .default(SaveData::default())
-            .revertible(true)
-            .revert_to_default_on_deserialization_errors(true)
-            .build()
-            .expect("failed to initialize save data"),
-    );
+    let mut save_data = Persistent::<SaveData>::builder()
+        .name("save data")
+        .format(bevy_persistent::StorageFormat::Toml)
+        .path(path.join("save.toml"))
+        .default(SaveData::default())
+        .revertible(true)
+        .revert_to_default_on_deserialization_errors(true)
+        .build()
+        .expect("failed to initialize save data");
+
+    save_data.level = 1;
+    save_data.battery = save_data.max_battery;
+    save_data.health = save_data.max_health;
+
+    cmd.insert_resource(save_data);
 }
 
 #[cfg(not(feature = "persist"))]

@@ -46,11 +46,11 @@ pub struct DamageEvent(pub Entity);
 
 fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
     for _ in 0..3 {
-        let (x, y) = (
+        let tile_pos = UVec2::new(
             rand::random::<u32>() % 11,
             rand::random::<u32>() % 7,
         );
-        let pos = tile_to_pos(x, y);
+        let pos = tile_to_pos(tile_pos);
         cmd.spawn((
             SpriteBundle {
                 transform: Transform::from_translation(pos.extend(5.))
@@ -63,7 +63,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
                 index: 29 + 7 * 48,
             },
             Enemy {
-                pos: UVec2::new(x, y),
+                pos: tile_pos,
                 health: 2,
             },
             StateScoped(GameState::Play),

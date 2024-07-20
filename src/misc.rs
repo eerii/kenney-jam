@@ -1,6 +1,10 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
 
 use crate::{tilemap::TILE_SEP, PlaySet};
 
@@ -28,6 +32,17 @@ pub enum Direction {
     South,
     East,
     West,
+}
+
+impl Distribution<Direction> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Direction {
+        match rng.gen_range(0..=3) {
+            0 => Direction::North,
+            1 => Direction::South,
+            2 => Direction::East,
+            _ => Direction::West,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -79,7 +94,7 @@ fn move_to(
 // Helpers
 // ·······
 
-fn dir_to_vec(dir: &Direction, val: f32) -> Vec2 {
+pub fn dir_to_vec(dir: &Direction, val: f32) -> Vec2 {
     match dir {
         Direction::North => Vec2::new(0., val),
         Direction::South => Vec2::new(0., -val),
