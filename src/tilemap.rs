@@ -1,14 +1,22 @@
+use std::{
+    collections::{HashMap, HashSet},
+    hash::{Hash, Hasher},
+};
+
 use bevy::prelude::*;
 use itertools::Itertools;
+use rand::{seq::SliceRandom, Rng};
 
 use crate::{
     assets::{SpriteAssets, ATLAS_SIZE},
     data::{Persistent, SaveData},
+    misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
     GameState, PlaySet, PlayState, SCALE,
 };
 
 pub const TILE_SEP: f32 = 20.;
+pub const ROOM_SEP: UVec2 = UVec2::new(19, 15);
 
 // ······
 // Plugin
@@ -37,43 +45,58 @@ impl Plugin for TilemapPlugin {
 
 #[derive(Resource)]
 pub struct Tilemap {
-    // TODO: Convert to hashset or something more sparse
-    tiles: Vec<Entity>,
-    size: UVec2,
+    tiles: HashSet<TileData>,
 }
 
 impl Tilemap {
-    pub fn get_tile(&self, pos: UVec2) -> Option<Entity> {
-        if pos.y >= self.size.y {
-            return None;
-        };
-        let i = (pos.x * self.size.y + pos.y) as usize;
-        if i < self.tiles.len() {
-            Some(self.tiles[i])
-        } else {
-            None
+    pub fn get_tile(&self, pos: IVec2) -> Option<Entity> {
+        self.tiles.get(&TileData::pos(pos)).map(|t| t.entity)
+    }
+}
+
+struct TileData {
+    pub x: i32,
+    pub y: i32,
+    pub entity: Entity,
+}
+
+impl TileData {
+    pub fn pos(p: IVec2) -> Self {
+        Self {
+            x: p.x,
+            y: p.y,
+            entity: Entity::PLACEHOLDER,
         }
     }
 }
+
+impl Hash for TileData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.x.hash(state);
+        self.y.hash(state);
+    }
+}
+
+impl PartialEq for TileData {
+    fn eq(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y
+    }
+}
+
+impl Eq for TileData {}
 
 // ··········
 // Components
 // ··········
 
-#[derive(Default)]
-pub enum TileType {
+#[derive(Component, Default, PartialEq, Eq, Hash, Clone)]
+pub enum Tile {
     #[default]
-    None,
-    Collision,
+    Ground,
+    Path,
+    Wall,
     LadderDown,
     LadderUp,
-}
-
-#[derive(Component, Default)]
-pub struct Tile {
-    _x: u32,
-    _y: u32,
-    pub tile: TileType,
 }
 
 // ······
@@ -90,47 +113,14 @@ pub struct NextLevelEvent {
 // ·······
 
 fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
-    let mut tiles = vec![];
-    let size = UVec2::new(11, 7);
-    let ladder_up = (size.x / 2) * size.y + (size.y / 2);
-    let mut ladder_down = rand::random::<u32>() % (size.x * size.y - 1);
-    if ladder_down == ladder_up {
-        ladder_down = size.x * size.y - 1;
-    }
-
-    for (x, y) in (0..size.x).cartesian_product(0..size.y) {
-        let i = x * size.y + y;
-        let (tile, index) = if i == ladder_down {
-            (
-                TileType::LadderDown,
-                6 * ATLAS_SIZE.0 + 3,
-            )
-        } else if i == ladder_up {
-            (TileType::LadderUp, 6 * ATLAS_SIZE.0 + 2)
-        } else {
-            let index = rand::random::<usize>() % 9;
-            let tile = if index == 8 { TileType::Collision } else { TileType::default() };
-            (tile, index)
-        };
-
-        let tile = cmd.spawn((
-            SpriteBundle {
-                transform: Transform::from_translation(tile_to_pos(UVec2::new(x, y)).extend(0.))
-                    .with_scale(Vec3::splat(SCALE)),
-                texture: sprite_assets.one_bit.clone(),
-                ..default()
-            },
-            TextureAtlas {
-                layout: sprite_assets.one_bit_atlas.clone(),
-                index,
-            },
-            Tile { _x: x, _y: y, tile },
-            StateScoped(GameState::Play),
-        ));
-        tiles.push(tile.id());
-    }
-
-    cmd.insert_resource(Tilemap { tiles, size });
+    let tiles = generate_level(
+        &mut cmd,
+        &sprite_assets,
+        (3, 7),                               // TODO: Change this based on the level
+        (ROOM_SEP.x / 2 + 1, ROOM_SEP.x - 4), // TODO: Also make smaller rooms
+        (ROOM_SEP.y / 2 + 1, ROOM_SEP.y - 4),
+    );
+    cmd.insert_resource(Tilemap { tiles });
 }
 
 fn on_next_level(
@@ -163,14 +153,183 @@ fn level_transition(
 // Helpers
 // ·······
 
-pub fn pos_to_tile(pos: Vec2) -> UVec2 {
+pub fn pos_to_tile(pos: Vec2) -> IVec2 {
     let pos = pos / TILE_SEP / SCALE;
-    UVec2::new((pos.x + 5.) as u32, (pos.y + 3.) as u32)
+    IVec2::new(pos.x as i32, pos.y as i32)
 }
 
-pub fn tile_to_pos(pos: UVec2) -> Vec2 {
+pub fn tile_to_pos(pos: IVec2) -> Vec2 {
     Vec2::new(
-        (pos.x as f32 - 5.) * TILE_SEP * SCALE,
-        (pos.y as f32 - 3.) * TILE_SEP * SCALE,
+        pos.x as f32 * TILE_SEP * SCALE,
+        pos.y as f32 * TILE_SEP * SCALE,
     )
+}
+
+fn tile_to_index(tile: Tile) -> usize {
+    let mut rng = rand::thread_rng();
+    let tile = match tile {
+        Tile::Ground => [0, 0, 1, 2, 5, 6, 7, ATLAS_SIZE.0 * 6 + 16]
+            .choose(&mut rng)
+            .unwrap(),
+        Tile::Path => [1, 2, 3, 4].choose(&mut rng).unwrap(),
+        Tile::Wall => [
+            ATLAS_SIZE.0 * 13,
+            ATLAS_SIZE.0 * 17 + 10,
+            ATLAS_SIZE.0 * 17 + 13,
+            ATLAS_SIZE.0 * 18 + 10,
+        ]
+        .choose(&mut rng)
+        .unwrap(),
+        Tile::LadderDown => &(ATLAS_SIZE.0 * 6 + 3),
+        Tile::LadderUp => &(ATLAS_SIZE.0 * 6 + 2),
+    };
+    *tile
+}
+
+fn generate_level(
+    cmd: &mut Commands,
+    sprite_assets: &SpriteAssets,
+    rooms: (u32, u32),
+    size_x: (u32, u32),
+    size_y: (u32, u32),
+) -> HashSet<TileData> {
+    let mut rng = rand::thread_rng();
+
+    let rooms = rng.gen_range(rooms.0..=rooms.1);
+    let mut room_indices = HashSet::new();
+    let mut room_pos = IVec2::ZERO;
+
+    let mut tiles = HashMap::new();
+
+    // Generate rooms
+    for _ in 0..rooms {
+        loop {
+            if room_indices.insert(room_pos) {
+                break;
+            };
+            let dir: Direction = rng.gen();
+            let global_offset = dir_to_vec(&dir, 1.).as_ivec2();
+            room_pos += global_offset;
+        }
+
+        let size = UVec2::new(
+            rng.gen_range(size_x.0..=size_x.1),
+            rng.gen_range(size_y.0..=size_y.1),
+        );
+
+        let offset = IVec2::new(
+            rng.gen_range(0..(ROOM_SEP.x - size.x)) as i32 + room_pos.x * ROOM_SEP.x as i32,
+            rng.gen_range(0..(ROOM_SEP.y - size.y)) as i32 + room_pos.y * ROOM_SEP.y as i32,
+        );
+
+        generate_room(&mut tiles, size, offset);
+    }
+
+    // Generate corridors
+    let mut aux = room_indices.clone();
+    for a in room_indices {
+        for dir in Direction::iter() {
+            let offset = dir_to_vec(dir, 1.).as_ivec2();
+            let b = a + offset;
+            let sep = match dir {
+                Direction::North | Direction::South => ROOM_SEP.x * 2,
+                Direction::East | Direction::West => ROOM_SEP.y * 2,
+            };
+            if aux.contains(&b) {
+                // Corridor
+                let center_a = a * ROOM_SEP.as_ivec2() + ROOM_SEP.as_ivec2() / 2;
+                let mut first_wall = false;
+                for pos in 0..sep {
+                    let tile = TileData::pos(center_a + pos as i32 * offset);
+                    // Find the first wall and start laying paths
+                    if !first_wall {
+                        if let Some(Tile::Wall) = tiles.get(&tile) {
+                            first_wall = true;
+                            tiles.insert(tile, Tile::Path);
+                            continue;
+                        }
+                    }
+                    // Lay paths until next wall
+                    else if let Some(Tile::Wall) = tiles.insert(tile, Tile::Path) {
+                        break;
+                    }
+                }
+            }
+        }
+        aux.remove(&a);
+    }
+
+    // Insertar escaleira arriba
+    tiles.insert(
+        TileData::pos(ROOM_SEP.as_ivec2() / 2),
+        Tile::LadderUp,
+    );
+
+    // Insertar escaleira abaixo
+    for (_, tile) in tiles.iter_mut() {
+        // Esto supostamente é aleatorio
+        if !matches!(tile, Tile::Ground) {
+            continue;
+        }
+        *tile = Tile::LadderDown;
+        break;
+    }
+
+    // Create actual tiles
+    tiles
+        .iter()
+        .map(|(k, v)| TileData {
+            x: k.x,
+            y: k.y,
+            entity: create_tile(
+                cmd,
+                sprite_assets,
+                tile_to_pos(IVec2::new(k.x, k.y)),
+                v.clone(),
+                tile_to_index(v.clone()),
+            ),
+        })
+        .collect()
+}
+
+fn generate_room(tiles: &mut HashMap<TileData, Tile>, size: UVec2, offset: IVec2) {
+    for (x, y) in (0..=size.x + 1).cartesian_product(0..=size.y + 1) {
+        let tile = if x == 0 || x == size.x + 1 || y == 0 || y == size.y + 1 {
+            Tile::Wall
+        } else {
+            Tile::Ground
+        };
+
+        tiles.insert(
+            TileData {
+                x: x as i32 + offset.x,
+                y: y as i32 + offset.y,
+                entity: Entity::PLACEHOLDER, // tile.id(),
+            },
+            tile,
+        );
+    }
+}
+
+fn create_tile(
+    cmd: &mut Commands,
+    sprite_assets: &SpriteAssets,
+    pos: Vec2,
+    tile: Tile,
+    index: usize,
+) -> Entity {
+    cmd.spawn((
+        SpriteBundle {
+            transform: Transform::from_translation(pos.extend(0.)).with_scale(Vec3::splat(SCALE)),
+            texture: sprite_assets.one_bit.clone(),
+            ..default()
+        },
+        TextureAtlas {
+            layout: sprite_assets.one_bit_atlas.clone(),
+            index,
+        },
+        tile,
+        StateScoped(GameState::Play),
+    ))
+    .id()
 }

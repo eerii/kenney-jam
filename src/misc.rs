@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI, slice::Iter};
 
 use bevy::prelude::*;
 use rand::{
@@ -42,6 +42,18 @@ impl Distribution<Direction> for Standard {
             2 => Direction::East,
             _ => Direction::West,
         }
+    }
+}
+
+impl Direction {
+    pub fn iter() -> Iter<'static, Direction> {
+        static DIRECTIONS: [Direction; 4] = [
+            Direction::North,
+            Direction::South,
+            Direction::East,
+            Direction::West,
+        ];
+        DIRECTIONS.iter()
     }
 }
 

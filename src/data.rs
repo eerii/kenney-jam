@@ -73,8 +73,8 @@ impl Default for SaveData {
         Self {
             level: 0,
             max_range: 5,
-            battery: 50,
-            max_battery: 50,
+            battery: 200,
+            max_battery: 200,
             attack: 1.,
         }
     }
