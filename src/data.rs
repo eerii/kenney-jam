@@ -60,23 +60,19 @@ impl Default for GameOptions {
 #[derive(Resource, Serialize, Deserialize)]
 pub struct SaveData {
     pub level: u32,
-    pub max_connection: u32,
+    pub max_range: u32,
     pub max_battery: u32,
     pub battery: u32,
-    pub max_health: f32,
-    pub health: f32,
     pub attack: f32,
 }
 
 impl Default for SaveData {
     fn default() -> Self {
         Self {
-            level: 1,
-            max_connection: 5,
-            battery: 30,
-            max_battery: 30,
-            health: 5.,
-            max_health: 5.,
+            level: 0,
+            max_range: 5,
+            battery: 50,
+            max_battery: 50,
             attack: 1.,
         }
     }
@@ -149,9 +145,8 @@ pub(crate) fn init_data(mut cmd: Commands) {
         .build()
         .expect("failed to initialize save data");
 
-    save_data.level = 1;
+    save_data.level = 0;
     save_data.battery = save_data.max_battery;
-    save_data.health = save_data.max_health;
 
     cmd.insert_resource(save_data);
 }

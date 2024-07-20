@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    assets::{SoundAssets, SpriteAssets},
+    assets::{SoundAssets, SpriteAssets, ATLAS_SIZE},
     tilemap::tile_to_pos,
     GameState, PlaySet, SCALE,
 };
@@ -60,7 +60,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
             },
             TextureAtlas {
                 layout: sprite_assets.one_bit_atlas.clone(),
-                index: 29 + 7 * 48,
+                index: 7 * ATLAS_SIZE.0 + 29,
             },
             Enemy {
                 pos: tile_pos,

@@ -7,11 +7,9 @@ use sickle_ui::prelude::*;
 use super::widgets::UiImageWidget;
 use crate::{
     assets::{CoreAssets, LoadingData},
-    ui::{widgets::UiTextWidget, UiRootContainer},
+    ui::{widgets::UiTextWidget, UiRootContainer, UI_GAP},
     GameState,
 };
-
-const UI_GAP: Val = Val::Px(16.);
 
 /// Loading screen
 /// Adds a loading screen at the start of the game while it is loading assets

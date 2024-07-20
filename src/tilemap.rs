@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use itertools::Itertools;
 
 use crate::{
-    assets::SpriteAssets,
+    assets::{SpriteAssets, ATLAS_SIZE},
     data::{Persistent, SaveData},
     player::{Status, StatusEvent},
     GameState, PlaySet, PlayState, SCALE,
@@ -93,7 +93,7 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
 
     for (x, y) in (0..size.x).cartesian_product(0..size.y) {
         let (tile, index) = if x * size.y + y == ladder {
-            (TileType::Ladder, 3 + 6 * 48)
+            (TileType::Ladder, 6 * ATLAS_SIZE.0 + 3)
         } else {
             let index = rand::random::<usize>() % 9;
             let tile = if index == 8 { TileType::Collision } else { TileType::default() };
@@ -138,9 +138,9 @@ fn level_transition(
     next_state.set(GameState::Play);
     next_play_state.set(PlayState::Play);
     let _ = save_data.update(|data| data.level += 1);
-    if save_data.level >= save_data.max_connection {
+    if save_data.level >= save_data.max_range {
         status_writer.send(StatusEvent(Status::ConnectionEmpty));
-    } else if save_data.level + 2 >= save_data.max_connection {
+    } else if save_data.level + 2 >= save_data.max_range {
         status_writer.send(StatusEvent(Status::ConnectionLow));
     }
 }

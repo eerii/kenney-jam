@@ -117,7 +117,7 @@ fn move_player(
     // Rooms left
     // 3 - 10%, 2 - 20%, 1 - 35%, 0 or more- 50%
     let rooms_left = save_data
-        .max_connection
+        .max_range
         .saturating_sub(save_data.level)
         .clamp(0, 4);
     let percents = [0.5, 0.35, 0.2, 0.1, 0.0];

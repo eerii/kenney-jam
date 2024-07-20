@@ -5,6 +5,7 @@ use sickle_ui::{prelude::*, SickleUiPlugin};
 
 use crate::{camera::FinalCamera, GameState};
 
+pub mod gui;
 #[cfg(feature = "loading")]
 pub mod loading;
 #[cfg(feature = "menu")]
@@ -12,6 +13,8 @@ pub mod menu;
 #[cfg(feature = "tts")]
 pub mod tts;
 pub mod widgets;
+
+const UI_GAP: Val = Val::Px(16.);
 
 // ······
 // Plugin
@@ -23,7 +26,7 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(SickleUiPlugin)
+        app.add_plugins((SickleUiPlugin, gui::GuiPlugin))
             .add_systems(OnExit(GameState::Startup), init);
 
         #[cfg(feature = "loading")]

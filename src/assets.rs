@@ -4,6 +4,8 @@ use bevy::prelude::*;
 
 use crate::GameState;
 
+pub const ATLAS_SIZE: (usize, usize) = (49, 23);
+
 // ······
 // Plugin
 // ······
@@ -81,7 +83,13 @@ fn load_sprites(
     mut loading_data: ResMut<LoadingData>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(16), 48, 21, None, None);
+    let layout = TextureAtlasLayout::from_grid(
+        UVec2::splat(16),
+        ATLAS_SIZE.0 as u32,
+        ATLAS_SIZE.1 as u32,
+        None,
+        None,
+    );
 
     let assets = SpriteAssets {
         one_bit: loading_data.load(&asset_server, "sprites/1bit.png"),

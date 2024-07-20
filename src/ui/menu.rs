@@ -12,8 +12,6 @@ mod mappings;
 pub mod navigation;
 mod options;
 
-const UI_GAP: Val = Val::Px(16.);
-
 // ······
 // Plugin
 // ······
