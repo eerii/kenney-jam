@@ -73,6 +73,7 @@ pub struct SaveData {
     pub water_uses: u32,
     pub grass_uses: u32,
     pub attack_selected: u32,
+    pub money: u32,
 }
 
 impl Default for SaveData {
@@ -90,6 +91,7 @@ impl Default for SaveData {
             water_uses: 0,
             grass_uses: 0,
             attack_selected: 1,
+            money: 0,
         }
     }
 }

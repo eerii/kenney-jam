@@ -96,26 +96,34 @@ fn on_damage(
     mut enemies: Query<&mut Enemy>,
     sound_assets: Res<SoundAssets>,
     mut damage_reader: EventReader<DamageEvent>,
+    mut save_data: ResMut<Persistent<SaveData>>,
 ) {
     for DamageEvent(entity) in damage_reader.read() {
         if let Ok(mut enemy) = enemies.get_mut(*entity) {
             enemy.health -= 1;
             if enemy.health == 0 {
                 cmd.entity(*entity).despawn();
+                let mut rng = rand::thread_rng();
                 cmd.spawn(AudioBundle {
-                    // source: sound_assets.cat[rand::random::<usize>() % 3].clone(),
                     source: match enemy.typ {
                         EnemyType::Chicken => {
-                            sound_assets.chicken[rand::random::<usize>() % 2].clone()
+                            sound_assets.chicken[rng.gen_range(0..2)].clone()
                         },
-                        EnemyType::Cat => sound_assets.cat[rand::random::<usize>() % 3].clone(),
-                        EnemyType::Dog => sound_assets.dog[rand::random::<usize>() % 3].clone(),
+                        EnemyType::Cat => sound_assets.cat[rng.gen_range(0..3)].clone(),
+                        EnemyType::Dog => sound_assets.dog[rng.gen_range(0..3)].clone(),
                         EnemyType::YoungOld | EnemyType::Man => {
-                            sound_assets.man[rand::random::<usize>() % 2].clone()
+                            sound_assets.man[rng.gen_range(0..2)].clone()
                         },
                     },
                     settings: PlaybackSettings::DESPAWN,
                 });
+                save_data.money += match enemy.typ {
+                    EnemyType::Chicken => rng.gen_range(4..6),
+                    EnemyType::Cat => rng.gen_range(8..11),
+                    EnemyType::Dog => rng.gen_range(14..17),
+                    EnemyType::YoungOld => rng.gen_range(18..21),
+                    EnemyType::Man => rng.gen_range(24..27),
+                };
             }
         }
 
