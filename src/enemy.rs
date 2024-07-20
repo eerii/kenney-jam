@@ -27,10 +27,29 @@ impl Plugin for EnemyPlugin {
 // Components
 // ··········
 
+pub enum EnemyType {
+    Chicken,
+    Cat,
+    Dog,
+    YoungOld,   // for both kids and elders
+    Man,
+}
+
+fn ret_type() -> EnemyType {
+    match rand::random::<u32>() % 5 {
+        0 => EnemyType::Chicken,
+        1 => EnemyType::Cat,
+        2 => EnemyType::Dog,
+        3 => EnemyType::YoungOld,
+        _ => EnemyType::Man
+    }
+}
+
 #[derive(Component)]
 pub struct Enemy {
     pub pos: UVec2,
     pub health: u32,
+    pub typ: EnemyType,
 }
 
 // ······
@@ -51,6 +70,31 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
             rand::random::<u32>() % 7,
         );
         let pos = tile_to_pos(tile_pos);
+        let index;
+        let health;
+        let typ = ret_type();
+        match typ {
+            EnemyType::Chicken => {
+                index = 7 * ATLAS_SIZE.0 + 25 + rand::random::<usize>() % 2;
+                health = 1;
+            },
+            EnemyType::Cat => {
+                index = 7 * ATLAS_SIZE.0 + 29 + rand::random::<usize>() % 2;
+                health = 2;
+            },
+            EnemyType::Dog => {
+                index = 7 * ATLAS_SIZE.0 + 31;
+                health = 3;
+            },
+            EnemyType::YoungOld => {
+                index = 4 * ATLAS_SIZE.0 + 29;
+                health = 4;
+            },
+            EnemyType::Man => {
+                index = 28;
+                health = 5;
+            },
+        }
         cmd.spawn((
             SpriteBundle {
                 transform: Transform::from_translation(pos.extend(5.))
@@ -60,11 +104,12 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
             },
             TextureAtlas {
                 layout: sprite_assets.one_bit_atlas.clone(),
-                index: 7 * ATLAS_SIZE.0 + 29,
+                index,
             },
             Enemy {
                 pos: tile_pos,
-                health: 2,
+                health,
+                typ,
             },
             StateScoped(GameState::Play),
         ));
@@ -82,11 +127,21 @@ fn on_damage(
             enemy.health -= 1;
             if enemy.health == 0 {
                 cmd.entity(*entity).despawn();
+                cmd.spawn(AudioBundle {
+                    // source: sound_assets.cat[rand::random::<usize>() % 3].clone(),
+                    source: match enemy.typ {
+                        EnemyType::Chicken => sound_assets.chicken[rand::random::<usize>() % 2].clone(),
+                        EnemyType::Cat => sound_assets.cat[rand::random::<usize>() % 3].clone(),
+                        EnemyType::Dog => sound_assets.dog[rand::random::<usize>() % 3].clone(),
+                        EnemyType::YoungOld | EnemyType::Man => sound_assets.man[rand::random::<usize>() % 2].clone(),
+                    },
+                    settings: PlaybackSettings::DESPAWN,
+                });
             }
         }
 
         cmd.spawn(AudioBundle {
-            source: sound_assets.boing.clone(),
+            source: sound_assets.attack.clone(),
             settings: PlaybackSettings::DESPAWN,
         });
     }
