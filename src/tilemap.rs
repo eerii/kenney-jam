@@ -13,7 +13,7 @@ use crate::{
     enemy::{get_enemy, Element},
     misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
-    GameState, PlaySet, PlayState, SCALE,
+    GameState, PlayState, SCALE,
 };
 
 pub const TILE_SEP: f32 = 20.;
@@ -27,16 +27,10 @@ pub struct TilemapPlugin;
 
 impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<NextLevelEvent>()
-            .add_systems(OnEnter(GameState::Play), init)
-            .add_systems(
-                Update,
-                on_next_level.in_set(PlaySet::Events),
-            )
-            .add_systems(
-                OnEnter(GameState::LevelTransition),
-                level_transition,
-            );
+        app.add_systems(OnEnter(GameState::Play), init).add_systems(
+            OnEnter(GameState::LevelTransition),
+            level_transition,
+        );
     }
 }
 
@@ -101,15 +95,6 @@ pub enum Tile {
     LadderUp,
 }
 
-// ······
-// Events
-// ······
-
-#[derive(Event)]
-pub struct NextLevelEvent {
-    pub shop: bool,
-}
-
 // ·······
 // Systems
 // ·······
@@ -128,16 +113,6 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>, save_data: Res<Pers
         (ROOM_SEP.y / 2 + 1, ROOM_SEP.y - 4),
     );
     cmd.insert_resource(Tilemap { tiles });
-}
-
-fn on_next_level(
-    mut next_state: ResMut<NextState<GameState>>,
-    mut next_level_reader: EventReader<NextLevelEvent>,
-) {
-    // TODO: Confirm that you want to continue
-    if let Some(event) = next_level_reader.read().next() {
-        next_state.set(if event.shop { GameState::Shop } else { GameState::LevelTransition });
-    }
 }
 
 fn level_transition(
@@ -283,6 +258,9 @@ fn generate_level(
         *tile = Tile::LadderDown;
         break;
     }
+
+    // TODO: Generate shop currency
+    // TODO: Generate some linear walls
 
     // Create actual tiles
     tiles

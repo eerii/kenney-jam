@@ -135,7 +135,15 @@ pub fn get_enemy(pos: IVec2, level: u32) -> (Enemy, usize) {
         EnemyType::Man => (26 + rng.gen_range(0..6), 5),
     };
 
-    (Enemy { pos, health, typ, elem: enemy_elem() }, index)
+    (
+        Enemy {
+            pos,
+            health,
+            typ,
+            elem: enemy_elem(),
+        },
+        index,
+    )
 }
 
 fn enemy_type(level: u32) -> EnemyType {

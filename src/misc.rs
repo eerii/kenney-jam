@@ -6,7 +6,7 @@ use rand::{
     Rng,
 };
 
-use crate::{tilemap::TILE_SEP, PlaySet};
+use crate::{tilemap::TILE_SEP, GameState};
 
 // ······
 // Plugin
@@ -17,8 +17,8 @@ pub struct MiscPlugin;
 impl Plugin for MiscPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
-            move_to.in_set(PlaySet::Animation),
+            PostUpdate,
+            move_to.run_if(in_state(GameState::Play)),
         );
     }
 }
