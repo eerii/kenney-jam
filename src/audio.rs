@@ -19,7 +19,8 @@ pub struct AudioPlugin;
 
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Play), init);
+        app.add_systems(OnEnter(GameState::Play), init.run_if(run_once()))
+            .add_systems(Update, detect_audio_removal.run_if(in_state(GameState::Play)));
     }
 }
 
@@ -42,15 +43,36 @@ struct AmbientMusic;
 fn init(mut cmd: Commands, assets: Res<SoundAssets>) {
     cmd.spawn((
         AudioBundle {
-            source: assets.ambient_music.clone(),
+            source: assets.ambient_music.first().unwrap().clone(),
             settings: PlaybackSettings {
-                mode: PlaybackMode::Loop,
-                volume: Volume::new(0.1),
-                paused: true, // Starts paused to avoid annoyances
+                mode: PlaybackMode::Despawn,
+                volume: Volume::new(1.),
                 ..default()
             },
         },
         AmbientMusic,
-        StateScoped(GameState::Play),
     ));
+}
+
+/// Detects when the audio entity is despawned and creates a new one
+/// with a different part of the music loop
+fn detect_audio_removal(
+    mut cmd: Commands,
+    assets: Res<SoundAssets>,
+    mut removals: RemovedComponents<AmbientMusic>
+    ) {
+    for _ in removals.read() {
+        let next = rand::random::<usize>() % (assets.ambient_music.len() - 1) + 1;
+        cmd.spawn((
+            AudioBundle {
+                source: assets.ambient_music[next].clone(),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    volume: Volume::new(1.),
+                    ..default()
+                },
+            },
+            AmbientMusic,
+        ));
+    }
 }

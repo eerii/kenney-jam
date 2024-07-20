@@ -59,8 +59,10 @@ pub struct SpriteAssets {
 pub struct SoundAssets {
     /// Simple jumping sound
     pub boing: Handle<AudioSource>,
-    /// Background music for example games
-    pub ambient_music: Handle<AudioSource>,
+    /// Main menu music
+    pub main_menu: Handle<AudioSource>,
+    /// Background music
+    pub ambient_music: Vec<Handle<AudioSource>>,
 }
 
 // ·······
@@ -104,10 +106,18 @@ fn load_sound(
     asset_server: Res<AssetServer>,
     mut loading_data: ResMut<LoadingData>,
 ) {
+    let music = [
+        "music/intro.ogg",
+        "music/A_no_piano.ogg",
+        "music/A_piano.ogg",
+        "music/B_no_piano.ogg",
+        "music/B_piano.ogg",
+    ];
     // They use the loading data manager, which tracks if they are loaded
     let assets = SoundAssets {
         boing: loading_data.load(&asset_server, "sounds/boing.ogg"),
-        ambient_music: loading_data.load(&asset_server, "music/rain.ogg"),
+        main_menu: loading_data.load(&asset_server, "music/main_menu.ogg"),
+        ambient_music: loading_data.load_vec(&asset_server, &music),
     };
 
     cmd.insert_resource(assets);
@@ -134,6 +144,18 @@ impl LoadingData {
         self.total += 1;
 
         handle
+    }
+
+    // same as previous load but can be passed an array of paths
+    fn load_vec<T: Asset>(&mut self, asset_server: &AssetServer, paths: &[&'static str]) -> Vec<Handle<T>> {
+        let mut handles = Vec::new();
+
+        for path in paths {
+            println!("Loading {}", path);
+            handles.push(self.load(asset_server, path));
+        }
+
+        handles
     }
 
     /// Returns the current loaded assets and the total assets registered
