@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{assets::SoundAssets, GameState, PlayState};
+use crate::{assets::SoundAssets, PlayState};
 
 // ······
 // Plugin
@@ -20,10 +20,21 @@ pub struct AudioPlugin;
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
         #[cfg(feature = "menu")]
-        app.add_systems(OnEnter(PlayState::Menu), menu_music)
-            .add_systems(OnExit(PlayState::Menu), fade_out);
-        app.add_systems(OnEnter(PlayState::Play), init.run_if(run_once()))
-            .add_systems(Update, detect_audio_removal.run_if(in_state(PlayState::Play)));
+        app.add_systems(OnEnter(PlayState::Menu), init_menu)
+            .add_systems(OnExit(PlayState::Menu), exit_menu)
+            .add_systems(
+                OnExit(PlayState::Play),
+                exit_play.run_if(in_state(crate::GameState::Play)),
+            );
+
+        app.add_systems(OnEnter(PlayState::Play), init_play)
+            .add_systems(
+                Update,
+                (
+                    detect_audio_removal.run_if(in_state(PlayState::Play)),
+                    fade_out,
+                ),
+            );
     }
 }
 
@@ -34,8 +45,14 @@ impl Plugin for AudioPlugin {
 #[derive(Component)]
 struct AmbientMusic;
 
+#[cfg(feature = "menu")]
 #[derive(Component)]
 struct MainMusic;
+
+#[derive(Component)]
+struct FadeOut {
+    despawn: bool,
+}
 
 // ·······
 // Systems
@@ -46,18 +63,43 @@ struct MainMusic;
 /// even more complex behaviour, for example, to despawn the entity when the
 /// audio is finished
 /// CHANGE: Enable or disable background music and other sounds
-fn init(mut cmd: Commands, assets: Res<SoundAssets>) {
-    cmd.spawn((
-        AudioBundle {
-            source: assets.ambient_music.first().unwrap().clone(),
-            settings: PlaybackSettings {
-                mode: PlaybackMode::Despawn,
-                volume: Volume::new(1.),
-                ..default()
-            },
+fn init_play(
+    mut cmd: Commands,
+    ambient: Query<&AudioSink, With<AmbientMusic>>,
+    assets: Res<SoundAssets>,
+) {
+    match ambient.get_single() {
+        Ok(a) => {
+            a.play();
+            a.set_volume(1.);
         },
-        AmbientMusic,
-    ));
+        Err(_) => {
+            cmd.spawn((
+                AudioBundle {
+                    source: assets.ambient_music.first().unwrap().clone(),
+                    settings: PlaybackSettings {
+                        mode: PlaybackMode::Despawn,
+                        volume: Volume::new(1.),
+                        ..default()
+                    },
+                },
+                AmbientMusic,
+            ));
+        },
+    };
+}
+
+#[cfg(feature = "menu")]
+fn exit_play(
+    mut cmd: Commands,
+    state: Res<State<PlayState>>,
+    sink: Query<Entity, With<AmbientMusic>>,
+) {
+    if matches!(state.get(), PlayState::Menu) {
+        for entity in sink.iter() {
+            cmd.entity(entity).insert(FadeOut { despawn: false });
+        }
+    }
 }
 
 /// Detects when the audio entity is despawned and creates a new one
@@ -65,7 +107,7 @@ fn init(mut cmd: Commands, assets: Res<SoundAssets>) {
 fn detect_audio_removal(
     mut cmd: Commands,
     assets: Res<SoundAssets>,
-    mut removals: RemovedComponents<AmbientMusic>
+    mut removals: RemovedComponents<AmbientMusic>,
 ) {
     for _ in removals.read() {
         let next = rand::random::<usize>() % (assets.ambient_music.len() - 1) + 1;
@@ -84,7 +126,7 @@ fn detect_audio_removal(
 }
 
 #[cfg(feature = "menu")]
-fn menu_music(mut cmd: Commands, assets: Res<SoundAssets>) {
+fn init_menu(mut cmd: Commands, assets: Res<SoundAssets>) {
     cmd.spawn((
         AudioBundle {
             source: assets.main_menu.clone(),
@@ -98,15 +140,23 @@ fn menu_music(mut cmd: Commands, assets: Res<SoundAssets>) {
     ));
 }
 
-fn fade_out(
-    mut cmd: Commands,
-    mut sink: Query<(&mut AudioSink, Entity), With<MainMusic>>,
-    time: Res<Time>,
-) {
-    for (audio, entity) in sink.iter_mut() {
-        audio.set_volume(audio.volume() - time.delta_seconds()/0.5);
+#[cfg(feature = "menu")]
+fn exit_menu(mut cmd: Commands, sink: Query<Entity, With<MainMusic>>) {
+    for entity in sink.iter() {
+        cmd.entity(entity).insert(FadeOut { despawn: true });
+    }
+}
+
+fn fade_out(mut cmd: Commands, sink: Query<(Entity, &AudioSink, &FadeOut)>, time: Res<Time>) {
+    for (entity, audio, fade_out) in sink.iter() {
+        audio.set_volume(audio.volume() - time.delta_seconds() / 0.5);
         if audio.volume() <= 0. {
-            cmd.entity(entity).despawn_recursive();
+            if fade_out.despawn {
+                cmd.entity(entity).despawn_recursive();
+            } else {
+                audio.pause();
+                cmd.entity(entity).remove::<FadeOut>();
+            }
         }
     }
 }

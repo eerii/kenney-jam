@@ -147,7 +147,11 @@ impl LoadingData {
     }
 
     // same as previous load but can be passed an array of paths
-    fn load_vec<T: Asset>(&mut self, asset_server: &AssetServer, paths: &[&'static str]) -> Vec<Handle<T>> {
+    fn load_vec<T: Asset>(
+        &mut self,
+        asset_server: &AssetServer,
+        paths: &[&'static str],
+    ) -> Vec<Handle<T>> {
         let mut handles = Vec::new();
 
         for path in paths {

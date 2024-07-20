@@ -5,7 +5,7 @@ use crate::{
     assets::{SpriteAssets, ATLAS_SIZE},
     data::{GameOptions, Persistent, SaveData},
     ui::UiRootContainer,
-    GameState, PlaySet, SCALE,
+    PlaySet, PlayState, SCALE,
 };
 
 // ······
@@ -17,7 +17,7 @@ pub struct GuiPlugin;
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            OnEnter(GameState::Play),
+            OnEnter(PlayState::Play),
             (init, update_displays).chain(),
         )
         .add_systems(
@@ -95,7 +95,7 @@ fn init(
                 ));
             }
         })
-        .insert(StateScoped(GameState::Play))
+        .insert(StateScoped(PlayState::Play))
         .style()
         .background_color(options.base_color.with_luminance(0.02));
 }
