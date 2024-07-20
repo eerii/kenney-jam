@@ -57,12 +57,18 @@ pub struct SpriteAssets {
 /// They are loaded during the loading state, showing the progress
 #[derive(Resource)]
 pub struct SoundAssets {
-    /// Simple jumping sound
-    pub boing: Handle<AudioSource>,
-    /// Main menu music
-    pub main_menu: Handle<AudioSource>,
-    /// Background music
     pub ambient_music: Vec<Handle<AudioSource>>,
+    pub attack: Handle<AudioSource>,
+    pub boing: Handle<AudioSource>,
+    pub cat: Vec<Handle<AudioSource>>,
+    pub chicken: Vec<Handle<AudioSource>>,
+    pub clack: Handle<AudioSource>,
+    pub dog: Vec<Handle<AudioSource>>,
+    pub low_battery: Handle<AudioSource>,
+    pub man: Vec<Handle<AudioSource>>,
+    pub main_menu: Handle<AudioSource>,
+    pub steps: Vec<Handle<AudioSource>>,
+    pub upgrades: Vec<Handle<AudioSource>>,
 }
 
 // ·······
@@ -113,11 +119,46 @@ fn load_sound(
         "music/B_no_piano.ogg",
         "music/B_piano.ogg",
     ];
+    let cat = [
+        "sounds/cat_1.ogg",
+        "sounds/cat_2.ogg",
+        "sounds/cat_3.ogg",
+    ];
+    let chicken = [
+        "sounds/chicken_1.ogg",
+        "sounds/chicken_2.ogg",
+    ];
+    let dog = [
+        "sounds/dog_1.ogg",
+        "sounds/dog_2.ogg",
+        "sounds/dog_3.ogg",
+    ];
+    let man = [
+        "sounds/man_death.ogg",
+        "sounds/man_hey.ogg",
+    ];
+    let steps = [
+        "sounds/step_1.ogg",
+        "sounds/step_2.ogg",
+    ];
+    let upgrades = [
+        "sounds/upgrade_1.ogg",
+        "sounds/upgrade_2.ogg",
+    ];
     // They use the loading data manager, which tracks if they are loaded
     let assets = SoundAssets {
-        boing: loading_data.load(&asset_server, "sounds/boing.ogg"),
-        main_menu: loading_data.load(&asset_server, "music/main_menu.ogg"),
         ambient_music: loading_data.load_vec(&asset_server, &music),
+        attack: loading_data.load(&asset_server, "sounds/attack.ogg"),
+        boing: loading_data.load(&asset_server, "sounds/boing.ogg"),
+        cat: loading_data.load_vec(&asset_server, &cat),
+        chicken: loading_data.load_vec(&asset_server, &chicken),
+        clack: loading_data.load(&asset_server, "sounds/clack.ogg"),
+        dog: loading_data.load_vec(&asset_server, &dog),
+        low_battery: loading_data.load(&asset_server, "sounds/low_battery.ogg"),
+        man: loading_data.load_vec(&asset_server, &man),
+        main_menu: loading_data.load(&asset_server, "music/main_menu.ogg"),
+        steps: loading_data.load_vec(&asset_server, &steps),
+        upgrades: loading_data.load_vec(&asset_server, &upgrades),
     };
 
     cmd.insert_resource(assets);
