@@ -59,6 +59,7 @@ pub enum PlayState {
     Menu,
     ToShop,
     ToLevel,
+    GameWon,
     GameOver,
 }
 

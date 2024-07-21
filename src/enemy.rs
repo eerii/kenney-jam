@@ -9,7 +9,7 @@ use crate::{
     misc::{dir_to_vec, Direction, MoveTo, MIN_TURN_TIMER},
     player::Player,
     tilemap::{tile_to_pos, Tile, Tilemap},
-    PlaySet, TurnState,
+    PlaySet, PlayState, TurnState,
 };
 
 const WEIGHTS: [[u32; 5]; 12] = [
@@ -58,6 +58,7 @@ pub enum EnemyType {
     Dog,
     YoungOld, // for both kids and elders
     Man,
+    EndGame, // This is not an enemy, its a jewel
 }
 
 #[derive(serde::Deserialize, serde::Serialize, PartialEq)]
@@ -113,9 +114,15 @@ fn on_damage(
     sound_assets: Res<SoundAssets>,
     mut damage_reader: EventReader<DamageEvent>,
     mut save_data: ResMut<Persistent<SaveData>>,
+    mut next_play_state: ResMut<NextState<PlayState>>,
 ) {
     for DamageEvent(entity) in damage_reader.read() {
         if let Ok(mut enemy) = enemies.get_mut(*entity) {
+            if let EnemyType::EndGame = enemy.typ {
+                next_play_state.set(PlayState::GameWon);
+                return;
+            }
+
             enemy.health -= match enemy.elem {
                 Element::Basic => match save_data.attack_selected {
                     Element::Basic => attack(save_data.attack_level),
@@ -234,6 +241,7 @@ fn on_damage(
                         EnemyType::YoungOld | EnemyType::Man => {
                             sound_assets.man[rng.gen_range(0..2)].clone()
                         },
+                        EnemyType::EndGame => sound_assets.upgrades[rng.gen_range(0..2)].clone(),
                     },
                     settings: PlaybackSettings::DESPAWN,
                 });
@@ -243,6 +251,7 @@ fn on_damage(
                     EnemyType::Dog => rng.gen_range(14..17),
                     EnemyType::YoungOld => rng.gen_range(18..21),
                     EnemyType::Man => rng.gen_range(24..27),
+                    EnemyType::EndGame => 0,
                 };
             }
         }
@@ -278,7 +287,7 @@ fn update_enemies(
         cmd.entity(entity).despawn();
     }
 
-    if timer.fraction() < 0.25 {
+    if timer.fraction() < 0.4 {
         return;
     };
 
@@ -288,6 +297,10 @@ fn update_enemies(
 
     let mut rng = rand::thread_rng();
     for (entity, mut enemy, move_to) in enemies.iter_mut() {
+        if let EnemyType::EndGame = enemy.typ {
+            continue;
+        };
+
         if move_to.is_some() {
             continue;
         };
@@ -324,8 +337,22 @@ fn update_enemies(
 // Helpers
 // ·······
 
-pub fn get_enemy(pos: IVec2, level: u32) -> (Enemy, usize) {
+pub fn get_enemy(pos: IVec2, level: u32, unique: &mut bool) -> (Enemy, usize) {
     let mut rng = rand::thread_rng();
+
+    if level == 9 && !*unique {
+        *unique = true;
+        return (
+            Enemy {
+                pos,
+                health: 1.,
+                typ: EnemyType::EndGame,
+                elem: Element::Basic,
+            },
+            45 + rng.gen_range(6..9) * ATLAS_SIZE.0,
+        );
+    }
+
     let typ = enemy_type(level);
     let (index, health) = match typ {
         EnemyType::Chicken => (
@@ -342,6 +369,7 @@ pub fn get_enemy(pos: IVec2, level: u32) -> (Enemy, usize) {
             4.,
         ),
         EnemyType::Man => (26 + rng.gen_range(0..6), 5.),
+        _ => unreachable!(),
     };
 
     (

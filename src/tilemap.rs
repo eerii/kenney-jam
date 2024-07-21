@@ -93,6 +93,7 @@ pub enum Tile {
     Wall,
     LadderDown,
     LadderUp,
+    Final,
 }
 
 // ·······
@@ -164,7 +165,7 @@ fn tile_to_index(tile: Tile) -> usize {
         .unwrap(),
         Tile::LadderDown => &(ATLAS_SIZE.0 * 6 + 3),
         Tile::LadderUp => &(ATLAS_SIZE.0 * 6 + 2),
-        Tile::Enemy => &0,
+        _ => &0,
     };
     *tile
 }
@@ -211,7 +212,7 @@ fn generate_level(
 
     // Generate corridors
     let mut aux = room_indices.clone();
-    for a in room_indices {
+    for a in room_indices.clone() {
         for dir in Direction::iter() {
             let offset = dir_to_vec(dir, 1.).as_ivec2();
             let b = a + offset;
@@ -243,26 +244,26 @@ fn generate_level(
         aux.remove(&a);
     }
 
+    // Insert ladder down or final key
+    // This iterator is supposed to be random
+    if level < 9 {
+        for (_, tile) in tiles.iter_mut() {
+            if !matches!(tile, Tile::Ground) {
+                continue;
+            }
+            *tile = Tile::LadderDown;
+            break;
+        }
+    }
+
     // Insert ladder up
     tiles.insert(
         TileData::pos(ROOM_SEP.as_ivec2() / 2),
         Tile::LadderUp,
     );
 
-    // Insert ladder down
-    // This iterator is supposed to be random
-    for (_, tile) in tiles.iter_mut() {
-        if !matches!(tile, Tile::Ground) {
-            continue;
-        }
-        *tile = Tile::LadderDown;
-        break;
-    }
-
-    // TODO: Generate shop currency
-    // TODO: Generate some linear walls
-
     // Create actual tiles
+    let mut unique = false;
     tiles
         .iter()
         .map(|(k, v)| TileData {
@@ -272,6 +273,7 @@ fn generate_level(
                 cmd,
                 sprite_assets,
                 level,
+                &mut unique,
                 IVec2::new(k.x, k.y),
                 v.clone(),
                 tile_to_index(v.clone()),
@@ -317,13 +319,14 @@ fn create_tile(
     cmd: &mut Commands,
     sprite_assets: &SpriteAssets,
     level: u32,
+    unique: &mut bool,
     pos: IVec2,
     tile: Tile,
     index: usize,
 ) -> Entity {
     // If it has an enemy, spawn it
     if matches!(tile, Tile::Enemy) {
-        let (enemy, index) = get_enemy(pos, level);
+        let (enemy, index) = get_enemy(pos, level, unique);
         cmd.spawn((
             SpriteBundle {
                 transform: Transform::from_translation(tile_to_pos(pos).extend(5.))

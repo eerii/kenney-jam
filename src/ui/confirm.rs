@@ -26,6 +26,10 @@ impl Plugin for ConfirmPlugin {
                 confirm_level,
             )
             .add_systems(
+                OnEnter(PlayState::GameWon),
+                confirm_game_won,
+            )
+            .add_systems(
                 OnEnter(PlayState::GameOver),
                 confirm_game_over,
             )
@@ -209,6 +213,58 @@ fn confirm_game_over(
             .background_color(options.base_color.with_luminance(0.02));
         })
         .insert(StateScoped(PlayState::GameOver));
+}
+
+fn confirm_game_won(
+    mut cmd: Commands,
+    root: Query<Entity, With<UiRootContainer>>,
+    assets: Res<CoreAssets>,
+    options: Res<Persistent<GameOptions>>,
+) {
+    let Ok(root) = root.get_single() else { return };
+
+    cmd.ui_builder(root)
+        .column(|base| {
+            base.style()
+                .width(Val::Percent(100.))
+                .height(Val::Percent(100.))
+                .align_items(AlignItems::Center)
+                .justify_content(JustifyContent::Center);
+
+            base.column(|column| {
+                column
+                    .style()
+                    .width(Val::Percent(80.))
+                    .height(Val::Percent(25.))
+                    .align_items(AlignItems::Center)
+                    .justify_content(JustifyContent::Center)
+                    .row_gap(UI_GAP);
+
+                column.text(
+                    "You won the game!".into(),
+                    assets.font.clone(),
+                );
+
+                column.row(|row| {
+                    row.style()
+                        .width(Val::Percent(100.))
+                        .justify_content(JustifyContent::Center)
+                        .column_gap(UI_GAP);
+
+                    row.button(ConfirmButton::GameOver, |button| {
+                        button.text(
+                            "Back to shop".into(),
+                            assets.font.clone(),
+                        );
+                    })
+                    .style()
+                    .width(Val::Px(350.));
+                });
+            })
+            .style()
+            .background_color(options.base_color.with_luminance(0.02));
+        })
+        .insert(StateScoped(PlayState::GameWon));
 }
 
 fn handle_buttons(
