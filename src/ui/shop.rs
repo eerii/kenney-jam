@@ -16,7 +16,7 @@ use crate::{
 
 const SIZE: Val = Val::Px(16. * SCALE);
 
-const PRICE: [u32; 11] = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 999];
+const PRICE: [u32; 11] = [5, 10, 15, 30, 40, 50, 60, 70, 100, 200, 999];
 
 // ······
 // Plugin

@@ -255,7 +255,7 @@ fn on_damage(
                     EnemyType::YoungOld => rng.gen_range(18..21),
                     EnemyType::Man => rng.gen_range(24..27),
                     EnemyType::Money => {
-                        rng.gen_range((save_data.level + 1)..(save_data.level + 1) * 3)
+                        rng.gen_range((save_data.level + 2)..(save_data.level + 1) * 4)
                     },
                     EnemyType::EndGame => 0,
                 };
