@@ -178,7 +178,7 @@ impl UiOptionRowWidget for UiBuilder<'_, Entity> {
                     ..default()
                 },
                 background_color: BUTTON_COLOR.into(),
-                border_radius: BorderRadius::MAX,
+                // border_radius: BorderRadius::MAX,
                 ..default()
             },
             spawn_children,

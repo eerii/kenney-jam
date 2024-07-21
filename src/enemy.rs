@@ -19,12 +19,12 @@ const WEIGHTS: [[u32; 7]; 12] = [
     [5, 40, 30, 5, 00, 20, 0],
     [00, 20, 45, 25, 00, 9, 1],
     [00, 10, 20, 50, 10, 9, 1],
-    [00, 00, 5, 55, 20, 19, 1],
-    [00, 00, 00, 60, 15, 19, 1],
-    [00, 00, 00, 40, 35, 24, 1],
-    [00, 00, 00, 20, 50, 29, 1],
-    [00, 00, 00, 10, 70, 19, 1],
-    [00, 00, 00, 5, 85, 9, 1],
+    [00, 00, 5, 55, 20, 19, 0],
+    [00, 00, 00, 60, 15, 19, 0],
+    [00, 00, 00, 40, 35, 24, 0],
+    [00, 00, 00, 20, 50, 29, 0],
+    [00, 00, 00, 10, 70, 19, 0],
+    [00, 00, 00, 5, 85, 9, 0],
 ];
 
 // ······
@@ -43,7 +43,10 @@ impl Plugin for EnemyPlugin {
             )
             .add_systems(
                 Update,
-                on_damage.in_set(PlaySet::Events),
+                (
+                    on_damage.in_set(PlaySet::Events),
+                    enemy_flash.in_set(PlaySet::Animation),
+                ),
             );
     }
 }
@@ -99,6 +102,9 @@ pub struct Enemy {
 #[derive(Component)]
 struct EnemyTurn(Timer);
 
+#[derive(Component)]
+struct EnemyFlash(Timer);
+
 // ······
 // Events
 // ······
@@ -119,6 +125,12 @@ fn on_damage(
     mut next_play_state: ResMut<NextState<PlayState>>,
 ) {
     for DamageEvent(entity) in damage_reader.read() {
+        cmd.entity(*entity)
+            .try_insert(EnemyFlash(Timer::from_seconds(
+                0.15,
+                TimerMode::Once,
+            )));
+
         if let Ok(mut enemy) = enemies.get_mut(*entity) {
             if let EnemyType::EndGame = enemy.typ {
                 next_play_state.set(PlayState::GameWon);
@@ -285,6 +297,26 @@ fn enemy_turn(mut cmd: Commands) {
     )));
 }
 
+fn enemy_flash(
+    mut cmd: Commands,
+    mut enemies: Query<(
+        Entity,
+        &Enemy,
+        &mut Sprite,
+        &mut EnemyFlash,
+    )>,
+    time: Res<Time>,
+) {
+    for (entity, enemy, mut sprite, mut flash) in enemies.iter_mut() {
+        let timer = flash.0.tick(time.delta());
+        if timer.just_finished() {
+            cmd.entity(entity).remove::<EnemyFlash>();
+        }
+        let n = (timer.fraction() * 5.) as u32;
+        sprite.color = if n % 2 == 0 { Color::WHITE } else { enemy_color(&enemy.elem) };
+    }
+}
+
 fn update_enemies(
     mut cmd: Commands,
     mut timer: Query<(Entity, &mut EnemyTurn)>,
@@ -438,5 +470,14 @@ fn enemy_elem() -> Element {
         1 => Element::Water,
         2 => Element::Grass,
         _ => Element::Basic,
+    }
+}
+
+pub fn enemy_color(elem: &Element) -> Color {
+    match elem {
+        Element::Basic => Color::srgb(0.812, 0.776, 0.722),
+        Element::Fire => Color::srgb(0.902, 0.282, 0.18),
+        Element::Water => Color::srgb(0.235, 0.675, 0.843),
+        Element::Grass => Color::srgb(0.22, 0.851, 0.451),
     }
 }

@@ -42,8 +42,7 @@ pub(super) fn open(
                 .style()
                 .width(Val::Percent(100.))
                 .align_items(AlignItems::Center)
-                .justify_content(JustifyContent::Center)
-                .row_gap(UI_GAP);
+                .justify_content(JustifyContent::Center);
 
             column.title("Mappings".into(), assets.font.clone());
 
