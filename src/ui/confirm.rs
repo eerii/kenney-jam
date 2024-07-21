@@ -4,7 +4,7 @@ use sickle_ui::prelude::*;
 
 use crate::{
     assets::CoreAssets,
-    data::{GameOptions, Persistent},
+    data::{GameOptions, Persistent, SaveData},
     ui::{
         widgets::{UiButtonWidget, UiTextWidget},
         UiRootContainer, UI_GAP,
@@ -90,6 +90,11 @@ fn confirm_shop(
                     assets.font.clone(),
                 );
 
+                column.text(
+                    "You will not lose coins".into(),
+                    assets.font.clone(),
+                );
+
                 column.row(|row| {
                     row.style()
                         .width(Val::Percent(100.))
@@ -168,6 +173,7 @@ fn confirm_game_over(
     root: Query<Entity, With<UiRootContainer>>,
     assets: Res<CoreAssets>,
     options: Res<Persistent<GameOptions>>,
+    mut save_data: ResMut<Persistent<SaveData>>,
 ) {
     let Ok(root) = root.get_single() else { return };
 
@@ -192,6 +198,13 @@ fn confirm_game_over(
                     "You ran out of battery".into(),
                     assets.font.clone(),
                 );
+
+                column.text(
+                    format!("You lost {} coins", save_data.money - (save_data.money / 2)).into(),
+                    assets.font.clone(),
+                );
+
+                save_data.money /= 2;
 
                 column.row(|row| {
                     row.style()
