@@ -12,19 +12,19 @@ use crate::{
     PlaySet, PlayState, TurnState,
 };
 
-const WEIGHTS: [[u32; 5]; 12] = [
-    [90, 10, 00, 00, 00],
-    [70, 25, 5, 00, 00],
-    [40, 35, 25, 00, 00],
-    [10, 50, 35, 5, 00],
-    [00, 30, 45, 25, 00],
-    [00, 10, 30, 50, 10],
-    [00, 00, 10, 65, 25],
-    [00, 00, 00, 65, 35],
-    [00, 00, 00, 50, 50],
-    [00, 00, 00, 30, 70],
-    [00, 00, 00, 15, 85],
-    [00, 00, 00, 5, 95],
+const WEIGHTS: [[u32; 6]; 12] = [
+    [80, 10, 00, 00, 00, 10],
+    [65, 20, 5, 00, 00, 10],
+    [35, 30, 25, 00, 00, 20],
+    [5, 40, 30, 5, 00, 20],
+    [00, 20, 45, 25, 00, 10],
+    [00, 10, 20, 50, 10, 10],
+    [00, 00, 5, 55, 20, 20],
+    [00, 00, 00, 60, 15, 20],
+    [00, 00, 00, 40, 35, 25],
+    [00, 00, 00, 20, 50, 30],
+    [00, 00, 00, 10, 70, 20],
+    [00, 00, 00, 5, 85, 10],
 ];
 
 // ······
@@ -58,6 +58,7 @@ pub enum EnemyType {
     Dog,
     YoungOld, // for both kids and elders
     Man,
+    Money,
     EndGame, // This is not an enemy, its a jewel
 }
 
@@ -241,7 +242,9 @@ fn on_damage(
                         EnemyType::YoungOld | EnemyType::Man => {
                             sound_assets.man[rng.gen_range(0..2)].clone()
                         },
-                        EnemyType::EndGame => sound_assets.upgrades[rng.gen_range(0..2)].clone(),
+                        EnemyType::EndGame | EnemyType::Money => {
+                            sound_assets.upgrades[rng.gen_range(0..2)].clone()
+                        },
                     },
                     settings: PlaybackSettings::DESPAWN,
                 });
@@ -251,9 +254,14 @@ fn on_damage(
                     EnemyType::Dog => rng.gen_range(14..17),
                     EnemyType::YoungOld => rng.gen_range(18..21),
                     EnemyType::Man => rng.gen_range(24..27),
+                    EnemyType::Money => {
+                        rng.gen_range((save_data.level + 1)..(save_data.level + 1) * 3)
+                    },
                     EnemyType::EndGame => 0,
                 };
-                save_data.enemies_killed += 1;
+                if !matches!(enemy.typ, EnemyType::Money) {
+                    save_data.enemies_killed += 1;
+                };
             }
         }
 
@@ -301,11 +309,19 @@ fn update_enemies(
         if let EnemyType::EndGame = enemy.typ {
             continue;
         };
+        if let EnemyType::Money = enemy.typ {
+            continue;
+        };
 
         if move_to.is_some() {
             continue;
         };
-        if rng.gen::<f32>() < 0.5 {
+        if rng.gen_bool(0.3) {
+            cmd.entity(entity).insert(MoveTo::new(
+                tile_to_pos(enemy.pos),
+                tile_to_pos(enemy.pos),
+                None,
+            ));
             continue;
         };
 
@@ -370,6 +386,7 @@ pub fn get_enemy(pos: IVec2, level: u32, unique: &mut bool) -> (Enemy, usize) {
             4.,
         ),
         EnemyType::Man => (26 + rng.gen_range(0..6), 5.),
+        EnemyType::Money => (10 * ATLAS_SIZE.0 + 33, 0.5),
         _ => unreachable!(),
     };
 
@@ -377,8 +394,8 @@ pub fn get_enemy(pos: IVec2, level: u32, unique: &mut bool) -> (Enemy, usize) {
         Enemy {
             pos,
             health,
+            elem: if let EnemyType::Money = typ { Element::Basic } else { enemy_elem() },
             typ,
-            elem: enemy_elem(),
         },
         index,
     )
@@ -400,7 +417,8 @@ fn enemy_type(level: u32) -> EnemyType {
         1 => EnemyType::Cat,
         2 => EnemyType::Dog,
         3 => EnemyType::YoungOld,
-        _ => EnemyType::Man,
+        4 => EnemyType::Man,
+        _ => EnemyType::Money,
     }
 }
 

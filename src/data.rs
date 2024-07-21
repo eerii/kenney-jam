@@ -22,6 +22,10 @@ impl Plugin for DataPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<RestartEvent>()
             .add_systems(OnEnter(GameState::Startup), init_data)
+            .add_systems(
+                OnEnter(GameState::Play),
+                restart.run_if(run_once()),
+            )
             .add_systems(Update, on_restart);
     }
 }
@@ -182,23 +186,21 @@ pub(crate) fn init_data(mut cmd: Commands) {
             .expect("failed to initialize game options"),
     );
 
-    let mut save_data = Persistent::<SaveData>::builder()
-        .name("save data")
-        .format(bevy_persistent::StorageFormat::Toml)
-        .path(path.join("save.toml"))
-        .default(SaveData::default())
-        .revertible(true)
-        .revert_to_default_on_deserialization_errors(true)
-        .build()
-        .expect("failed to initialize save data");
+    cmd.insert_resource(
+        Persistent::<SaveData>::builder()
+            .name("save data")
+            .format(bevy_persistent::StorageFormat::Toml)
+            .path(path.join("save.toml"))
+            .default(SaveData::default())
+            .revertible(true)
+            .revert_to_default_on_deserialization_errors(true)
+            .build()
+            .expect("failed to initialize save data"),
+    );
+}
 
-    save_data.level = 0;
-    save_data.battery = max_battery(save_data.battery_level);
-    save_data.fire_uses = save_data.fire;
-    save_data.water_uses = save_data.water;
-    save_data.grass_uses = save_data.grass;
-
-    cmd.insert_resource(save_data);
+pub(crate) fn restart(mut reset_writer: EventWriter<RestartEvent>) {
+    reset_writer.send(RestartEvent);
 }
 
 #[cfg(not(feature = "persist"))]

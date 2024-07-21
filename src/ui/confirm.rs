@@ -38,6 +38,7 @@ impl Plugin for ConfirmPlugin {
                 handle_buttons.run_if(
                     in_state(PlayState::ToShop)
                         .or_else(in_state(PlayState::ToLevel))
+                        .or_else(in_state(PlayState::GameWon))
                         .or_else(in_state(PlayState::GameOver)),
                 ),
             );
@@ -54,6 +55,7 @@ enum ConfirmButton {
     Level,
     Back,
     GameOver,
+    GameWon,
 }
 
 // ·······
@@ -91,7 +93,7 @@ fn confirm_shop(
                 );
 
                 column.text(
-                    "You will not lose coins".into(),
+                    "You will not lose gems".into(),
                     assets.font.clone(),
                 );
 
@@ -200,7 +202,10 @@ fn confirm_game_over(
                 );
 
                 column.text(
-                    format!("You lost {} coins", save_data.money - (save_data.money / 2)).into(),
+                    format!(
+                        "You lost {} gems",
+                        save_data.money - (save_data.money / 2)
+                    ),
                     assets.font.clone(),
                 );
 
@@ -234,6 +239,7 @@ fn confirm_game_won(
     root: Query<Entity, With<UiRootContainer>>,
     assets: Res<CoreAssets>,
     options: Res<Persistent<GameOptions>>,
+    save_data: Res<Persistent<SaveData>>,
 ) {
     let Ok(root) = root.get_single() else { return };
 
@@ -249,13 +255,52 @@ fn confirm_game_won(
                 column
                     .style()
                     .width(Val::Percent(80.))
-                    .height(Val::Percent(25.))
+                    .height(Val::Percent(60.))
                     .align_items(AlignItems::Center)
                     .justify_content(JustifyContent::Center)
                     .row_gap(UI_GAP);
 
                 column.text(
-                    "You won the game!".into(),
+                    "You got the artifact".into(),
+                    assets.font.clone(),
+                );
+
+                column.text(
+                    if save_data.enemies_killed == 0 {
+                        "without harming anybody".into()
+                    } else {
+                        format!(
+                            "slaughtering {} animals",
+                            save_data.enemies_killed
+                        )
+                    },
+                    assets.font.clone(),
+                );
+
+                column.text(
+                    format!(
+                        "completing {} levels",
+                        save_data.levels_completed,
+                    ),
+                    assets.font.clone(),
+                );
+
+                column.text(
+                    format!(
+                        "and perishing {} times",
+                        save_data.deaths,
+                    ),
+                    assets.font.clone(),
+                );
+
+                column.text(
+                    format!(
+                        "score {}",
+                        (save_data.levels_completed as i32 + 1)
+                            * save_data.enemies_killed as i32
+                            * 100
+                            - save_data.deaths as i32 * 200
+                    ),
                     assets.font.clone(),
                 );
 
@@ -265,11 +310,8 @@ fn confirm_game_won(
                         .justify_content(JustifyContent::Center)
                         .column_gap(UI_GAP);
 
-                    row.button(ConfirmButton::GameOver, |button| {
-                        button.text(
-                            "Back to shop".into(),
-                            assets.font.clone(),
-                        );
+                    row.button(ConfirmButton::GameWon, |button| {
+                        button.text("Try again".into(), assets.font.clone());
                     })
                     .style()
                     .width(Val::Px(350.));
@@ -305,6 +347,9 @@ fn handle_buttons(
                 ConfirmButton::Back => next_play_state.set(PlayState::Play),
                 ConfirmButton::GameOver => {
                     next_state.set(GameState::Shop);
+                },
+                ConfirmButton::GameWon => {
+                    next_state.set(GameState::End);
                 },
             }
         }

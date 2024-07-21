@@ -9,7 +9,7 @@ use rand::{seq::SliceRandom, Rng};
 
 use crate::{
     assets::{SpriteAssets, ATLAS_SIZE},
-    data::{max_range, Persistent, SaveData},
+    data::{max_battery, max_range, Persistent, SaveData},
     enemy::{get_enemy, Element},
     misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
@@ -27,10 +27,12 @@ pub struct TilemapPlugin;
 
 impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Play), init).add_systems(
-            OnEnter(GameState::LevelTransition),
-            level_transition,
-        );
+        app.add_systems(OnEnter(GameState::Play), init)
+            .add_systems(
+                OnEnter(GameState::LevelTransition),
+                level_transition,
+            )
+            .add_systems(OnEnter(GameState::End), end);
     }
 }
 
@@ -130,6 +132,24 @@ fn level_transition(
     } else if save_data.level + 2 >= max_range(save_data.range_level) {
         status_writer.send(StatusEvent(Status::ConnectionLow));
     }
+}
+
+fn end(
+    mut next_state: ResMut<NextState<GameState>>,
+    mut next_play_state: ResMut<NextState<PlayState>>,
+    mut save_data: ResMut<Persistent<SaveData>>,
+) {
+    next_state.set(GameState::Play);
+    next_play_state.set(PlayState::Menu);
+    let _ = save_data.revert_to_default();
+    let battery = max_battery(save_data.battery_level);
+    let _ = save_data.update(|data| {
+        data.level = 0;
+        data.battery = battery;
+        data.fire_uses = data.fire;
+        data.water_uses = data.water;
+        data.grass_uses = data.grass;
+    });
 }
 
 // ·······
