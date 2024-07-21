@@ -16,7 +16,7 @@ on:
 
 env:
   binary: kenney-jam            # CHANGE: This needs to match the project name in Cargo.toml
-  itch_target: eerii/kenney-jam # CHANGE: If you want to deploy to itch, set this as your username/project-url
+  itch_target: eerii/nightmare-in-silver # CHANGE: If you want to deploy to itch, set this as your username/project-url
   features: "release"           # CHANGE: Add features here if you need them
   optimize: false               # CHANGE: This produces a smaller and faster web build, but it takes a long time
 
