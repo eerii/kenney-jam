@@ -205,6 +205,7 @@ fn confirm_game_over(
                 );
 
                 save_data.money /= 2;
+                save_data.deaths += 1;
 
                 column.row(|row| {
                     row.style()
@@ -285,6 +286,7 @@ fn handle_buttons(
     mut nav_event_reader: EventReader<NavEvent>,
     mut next_state: ResMut<NextState<GameState>>,
     mut next_play_state: ResMut<NextState<PlayState>>,
+    mut save_data: ResMut<Persistent<SaveData>>,
 ) {
     for event in nav_event_reader.read() {
         if let NavEvent::NoChanges {
@@ -296,7 +298,10 @@ fn handle_buttons(
 
             match buttons {
                 ConfirmButton::Shop => next_state.set(GameState::Shop),
-                ConfirmButton::Level => next_state.set(GameState::LevelTransition),
+                ConfirmButton::Level => {
+                    next_state.set(GameState::LevelTransition);
+                    save_data.levels_completed += 1;
+                },
                 ConfirmButton::Back => next_play_state.set(PlayState::Play),
                 ConfirmButton::GameOver => {
                     next_state.set(GameState::Shop);

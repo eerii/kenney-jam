@@ -253,6 +253,7 @@ fn on_damage(
                     EnemyType::Man => rng.gen_range(24..27),
                     EnemyType::EndGame => 0,
                 };
+                save_data.enemies_killed += 1;
             }
         }
 
