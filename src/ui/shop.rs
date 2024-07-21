@@ -192,7 +192,7 @@ fn handle_buttons(
                     match upgrade {
                         Upgrade::Range => {
                             println!("Range: {}", PRICE[save_data.range_lvl]);
-                            if save_data.money >= PRICE[save_data.range_lvl] {
+                            if save_data.money >= PRICE[save_data.range_lvl] && save_data.range_lvl < 10 {
                                 save_data.money -= PRICE[save_data.range_lvl];
                                 save_data.range_lvl += 1;
                                 save_data.max_range += 1;
@@ -200,7 +200,7 @@ fn handle_buttons(
                         },
                         Upgrade::Battery => {
                             println!("Battery");
-                            if save_data.money >= PRICE[save_data.battery_lvl] {
+                            if save_data.money >= PRICE[save_data.battery_lvl] && save_data.battery_lvl < 10 {
                                 save_data.money -= PRICE[save_data.battery_lvl];
                                 save_data.battery_lvl += 1;
                                 save_data.max_battery += 25;
@@ -208,7 +208,7 @@ fn handle_buttons(
                         },
                         Upgrade::Basic => {
                             println!("Basic");
-                            if save_data.money >= PRICE[save_data.attack_lvl] {
+                            if save_data.money >= PRICE[save_data.attack_lvl] && save_data.attack_lvl < 10 {
                                 save_data.money -= PRICE[save_data.attack_lvl];
                                 save_data.attack_lvl += 1;
                                 save_data.attack += 0.5;
@@ -217,7 +217,7 @@ fn handle_buttons(
                         Upgrade::Fire => {
                             println!("Fire: {}", PRICE[save_data.fire as usize]);
                             let lvl = save_data.fire as usize;
-                            if save_data.money >= PRICE[lvl] {
+                            if save_data.money >= PRICE[lvl] && lvl < 10 {
                                 save_data.money -= PRICE[lvl];
                                 save_data.fire += 1;
                             }
@@ -225,7 +225,7 @@ fn handle_buttons(
                         Upgrade::Water => {
                             let lvl = save_data.water as usize;
                             println!("Water: {}", PRICE[lvl]);
-                            if save_data.money >= PRICE[lvl] {
+                            if save_data.money >= PRICE[lvl] && lvl < 10 {
                                 save_data.money -= PRICE[lvl];
                                 save_data.water += 1;
                             }
@@ -233,7 +233,7 @@ fn handle_buttons(
                         Upgrade::Grass => {
                             let lvl = save_data.grass as usize;
                             println!("Grass: {}", PRICE[lvl]);
-                            if save_data.money >= PRICE[lvl] {
+                            if save_data.money >= PRICE[lvl] && lvl < 10 {
                                 save_data.money -= PRICE[lvl];
                                 save_data.grass += 1;
                             }
