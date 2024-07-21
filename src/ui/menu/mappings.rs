@@ -15,9 +15,10 @@ use crate::{
     input::Action,
     ui::{
         menu::{navigation::FocusableHoverFill, MenuButton, MenuState},
-        widgets::{UiButtonWidget, UiImageWidget, UiOptionRowWidget, UiTextWidget},
-        UiRootContainer,
+        widgets::{UiButtonWidget, UiOptionRowWidget, UiTextWidget},
+        UiRootContainer, UI_GAP,
     },
+    SCALE,
 };
 
 // ·······
@@ -109,7 +110,12 @@ fn row_mapping(map: &dyn Reflect, row: &mut UiBuilder<Entity>, asset_server: &As
     for prompt in prompts {
         // Dynamic loading to avoid having all icons in memory
         row.option_button(|button| {
-            button.image(asset_server.load(&prompt));
+            button.spawn(ImageBundle {
+                image: UiImage::new(asset_server.load(&prompt)).with_color(Color::srgb(0.812, 0.776, 0.722)),
+                ..default()
+            }).style()
+            .height(Val::Px(16. * SCALE))
+            .width(Val::Px(16. * SCALE));
         })
         .insert(BorderRadius::all(Val::Px(16.)))
         .insert(BorderColor::from(Srgba::NONE))
