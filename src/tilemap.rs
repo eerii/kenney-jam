@@ -10,7 +10,7 @@ use rand::{seq::SliceRandom, Rng};
 use crate::{
     assets::{SpriteAssets, ATLAS_SIZE},
     data::{max_battery, max_range, Persistent, SaveData},
-    enemy::{get_enemy, Element},
+    enemy::{enemy_color, get_enemy, Element},
     misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
     GameState, PlayState, SCALE,
@@ -245,7 +245,8 @@ fn generate_level(
                 let center_a = a * ROOM_SEP.as_ivec2() + ROOM_SEP.as_ivec2() / 2;
                 let mut first_wall = false;
                 for pos in 0..sep {
-                    let tile = TileData::pos(center_a + pos as i32 * offset);
+                    let pos = center_a + pos as i32 * offset;
+                    let tile = TileData::pos(pos);
                     // Find the first wall and start laying paths
                     if !first_wall {
                         if let Some(Tile::Wall) = tiles.get(&tile) {
@@ -258,22 +259,19 @@ fn generate_level(
                     else if let Some(Tile::Wall) = tiles.insert(tile, Tile::Path) {
                         break;
                     }
+                    let offset = offset.perp();
+                    let left = TileData::pos(pos + offset);
+                    if !tiles.contains_key(&left) {
+                        tiles.insert(left, Tile::Wall);
+                    }
+                    let right = TileData::pos(pos - offset);
+                    if !tiles.contains_key(&right) {
+                        tiles.insert(right, Tile::Wall);
+                    }
                 }
             }
         }
         aux.remove(&a);
-    }
-
-    // Insert ladder down or final key
-    // This iterator is supposed to be random
-    if level < 9 {
-        for (_, tile) in tiles.iter_mut() {
-            if !matches!(tile, Tile::Ground) {
-                continue;
-            }
-            *tile = Tile::LadderDown;
-            break;
-        }
     }
 
     // Insert ladder up
@@ -281,6 +279,16 @@ fn generate_level(
         TileData::pos(ROOM_SEP.as_ivec2() / 2),
         Tile::LadderUp,
     );
+
+    // Insert ladder down or final key
+    // This iterator is supposed to be random
+    for (_, tile) in tiles.iter_mut() {
+        if !matches!(tile, Tile::Ground) {
+            continue;
+        }
+        *tile = if level < 9 { Tile::LadderDown } else { Tile::Enemy };
+        break;
+    }
 
     // Create actual tiles
     let mut unique = false;
@@ -353,12 +361,7 @@ fn create_tile(
                     .with_scale(Vec3::splat(SCALE)),
                 texture: sprite_assets.one_bit.clone(),
                 sprite: Sprite {
-                    color: match enemy.elem {
-                        Element::Basic => Color::srgb(0.812, 0.776, 0.722),
-                        Element::Fire => Color::srgb(0.902, 0.282, 0.18),
-                        Element::Water => Color::srgb(0.235, 0.675, 0.843),
-                        Element::Grass => Color::srgb(0.22, 0.851, 0.451),
-                    },
+                    color: enemy_color(&enemy.elem),
                     ..default()
                 },
                 ..default()
