@@ -10,7 +10,7 @@ use rand::{seq::SliceRandom, Rng};
 use crate::{
     assets::{SpriteAssets, ATLAS_SIZE},
     data::{max_battery, max_range, Persistent, SaveData},
-    enemy::{enemy_color, get_enemy, Element},
+    enemy::{enemy_color, get_enemy},
     misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
     GameState, PlayState, SCALE,
@@ -261,13 +261,9 @@ fn generate_level(
                     }
                     let offset = offset.perp();
                     let left = TileData::pos(pos + offset);
-                    if !tiles.contains_key(&left) {
-                        tiles.insert(left, Tile::Wall);
-                    }
+                    tiles.entry(left).or_insert(Tile::Wall);
                     let right = TileData::pos(pos - offset);
-                    if !tiles.contains_key(&right) {
-                        tiles.insert(right, Tile::Wall);
-                    }
+                    tiles.entry(right).or_insert(Tile::Wall);
                 }
             }
         }

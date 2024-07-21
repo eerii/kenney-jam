@@ -91,7 +91,6 @@ fn init(mut cmd: Commands, sprite_assets: Res<SpriteAssets>) {
     ));
 }
 
-// TODO: Turn based movement
 fn move_player(
     mut cmd: Commands,
     mut player: Query<(Entity, &mut Player)>,

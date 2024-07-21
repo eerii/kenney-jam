@@ -1,10 +1,12 @@
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
 #[cfg(feature = "persist")]
 pub use bevy_persistent::prelude::Persistent;
 use rand::Rng;
 
 use crate::{
-    assets::{SoundAssets, ATLAS_SIZE},
+    assets::{CoreAssets, SoundAssets, ATLAS_SIZE},
     data::{attack, max_battery, SaveData},
     misc::{dir_to_vec, Direction, MoveTo, MIN_TURN_TIMER},
     player::Player,
@@ -45,7 +47,7 @@ impl Plugin for EnemyPlugin {
                 Update,
                 (
                     on_damage.in_set(PlaySet::Events),
-                    enemy_flash.in_set(PlaySet::Animation),
+                    (damage_text, enemy_flash).in_set(PlaySet::Animation),
                 ),
             );
     }
@@ -105,6 +107,9 @@ struct EnemyTurn(Timer);
 #[derive(Component)]
 struct EnemyFlash(Timer);
 
+#[derive(Component)]
+struct DamageText(Timer, Vec2);
+
 // ······
 // Events
 // ······
@@ -123,6 +128,7 @@ fn on_damage(
     mut damage_reader: EventReader<DamageEvent>,
     mut save_data: ResMut<Persistent<SaveData>>,
     mut next_play_state: ResMut<NextState<PlayState>>,
+    assets: Res<CoreAssets>,
 ) {
     for DamageEvent(entity) in damage_reader.read() {
         cmd.entity(*entity)
@@ -142,7 +148,7 @@ fn on_damage(
                     .clamp(0, max_battery(save_data.battery_level));
             }
 
-            enemy.health -= match enemy.elem {
+            let value = match enemy.elem {
                 Element::Basic => match save_data.attack_selected {
                     Element::Basic => attack(save_data.attack_level),
                     Element::Fire => {
@@ -249,6 +255,29 @@ fn on_damage(
                     },
                 },
             };
+
+            let value = value.clamp(0., enemy.health);
+            enemy.health -= value;
+
+            cmd.spawn((
+                Text2dBundle {
+                    text: Text::from_section(
+                        if value > 0. { format!("{:.1}", value) } else { "X".into() },
+                        TextStyle {
+                            font: assets.font.clone(),
+                            font_size: 10.,
+                            color: enemy_color(&save_data.attack_selected).lighter(0.1),
+                        },
+                    ),
+                    transform: Transform::from_translation(tile_to_pos(enemy.pos).extend(15.)),
+                    ..default()
+                },
+                DamageText(
+                    Timer::from_seconds(0.3, TimerMode::Once),
+                    tile_to_pos(enemy.pos),
+                ),
+            ));
+
             if enemy.health <= 0. {
                 cmd.entity(*entity).despawn();
                 let mut rng = rand::thread_rng();
@@ -383,6 +412,30 @@ fn update_enemies(
             let Ok(mut prev_tile) = tiles.get_mut(prev_tile) else { continue };
             *prev_tile = Tile::Ground;
         }
+    }
+}
+
+fn damage_text(
+    mut cmd: Commands,
+    mut text: Query<(
+        Entity,
+        &mut Transform,
+        &mut Text,
+        &mut DamageText,
+    )>,
+    time: Res<Time>,
+) {
+    for (entity, mut trans, mut text, mut flash) in text.iter_mut() {
+        let timer = flash.0.tick(time.delta());
+        if timer.just_finished() {
+            cmd.entity(entity).despawn();
+        }
+        let t = timer.fraction();
+        text.sections[0].style.color.set_alpha(1. - t);
+        let mut pos = flash.1;
+        pos.x += (t * PI * 2.).sin() * 5.;
+        pos.y += t * 50.;
+        trans.translation = pos.extend(15.);
     }
 }
 
