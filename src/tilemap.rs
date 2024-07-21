@@ -168,21 +168,50 @@ pub fn tile_to_pos(pos: IVec2) -> Vec2 {
     )
 }
 
-fn tile_to_index(tile: Tile) -> usize {
+const WALL_FIRST: [usize; 4] = [
+    ATLAS_SIZE.0 * 13,
+    ATLAS_SIZE.0 * 17 + 10,
+    ATLAS_SIZE.0 * 17 + 13,
+    ATLAS_SIZE.0 * 18 + 10,
+];
+const WALL_FINAL: [usize; 5] = [
+    ATLAS_SIZE.0 * 17 + 10,
+    ATLAS_SIZE.0 * 13,
+    ATLAS_SIZE.0 * 13 + 1,
+    ATLAS_SIZE.0 * 13 + 2,
+    ATLAS_SIZE.0 * 12 + 2,
+];
+const GROUND_FIRST: [usize; 8] = [0, 0, 1, 2, 5, 6, 7, ATLAS_SIZE.0 * 6 + 16];
+const GROUND_FINAL: [usize; 9] = [
+    0,
+    0,
+    1,
+    2,
+    3,
+    4,
+    ATLAS_SIZE.0 + 19,
+    ATLAS_SIZE.0 + 19,
+    ATLAS_SIZE.0 + 19,
+];
+
+fn tile_to_index(tile: Tile, level: u32) -> usize {
     let mut rng = rand::thread_rng();
     let tile = match tile {
-        Tile::Ground => [0, 0, 1, 2, 5, 6, 7, ATLAS_SIZE.0 * 6 + 16]
-            .choose(&mut rng)
-            .unwrap(),
+        Tile::Ground => {
+            if level < 5 {
+                GROUND_FIRST.choose(&mut rng).unwrap()
+            } else {
+                GROUND_FINAL.choose(&mut rng).unwrap()
+            }
+        },
         Tile::Path => [1, 2, 3, 4].choose(&mut rng).unwrap(),
-        Tile::Wall => [
-            ATLAS_SIZE.0 * 13,
-            ATLAS_SIZE.0 * 17 + 10,
-            ATLAS_SIZE.0 * 17 + 13,
-            ATLAS_SIZE.0 * 18 + 10,
-        ]
-        .choose(&mut rng)
-        .unwrap(),
+        Tile::Wall => {
+            if level < 5 {
+                WALL_FIRST.choose(&mut rng).unwrap()
+            } else {
+                WALL_FINAL.choose(&mut rng).unwrap()
+            }
+        },
         Tile::LadderDown => &(ATLAS_SIZE.0 * 6 + 3),
         Tile::LadderUp => &(ATLAS_SIZE.0 * 6 + 2),
         _ => &0,
@@ -300,7 +329,7 @@ fn generate_level(
                 &mut unique,
                 IVec2::new(k.x, k.y),
                 v.clone(),
-                tile_to_index(v.clone()),
+                tile_to_index(v.clone(), level),
             ),
         })
         .collect()
