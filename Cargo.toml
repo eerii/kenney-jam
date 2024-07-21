@@ -26,9 +26,8 @@ release = [ # Only in release (build with --release --no-default-features --feat
   "common",
   "loading",
   "menu",
-  "tts",
 ]
-common = ["input", "menu", "persist", "pixel_perfect", "ui"]
+common = ["input", "menu", "loading", "persist", "pixel_perfect", "ui"]
 
 input = ["leafwing-input-manager"]
 loading = ["ui"]

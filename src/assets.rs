@@ -41,6 +41,7 @@ impl Plugin for AssetLoaderPlugin {
 pub struct CoreAssets {
     /// Icon of the bevy engine, used in splash screens and examples
     pub bevy_icon: Handle<Image>,
+    pub kenney_icon: Handle<Image>,
     /// Default font for the text in the engine
     pub font: Handle<Font>,
 }
@@ -79,6 +80,7 @@ pub(crate) fn load_core(mut cmd: Commands, asset_server: Res<AssetServer>) {
     // They use the asset server directly
     let assets = CoreAssets {
         bevy_icon: asset_server.load("icons/bevy.png"),
+        kenney_icon: asset_server.load("misc/kenney.png"),
         font: asset_server.load("fonts/kenney-pixel.ttf"),
     };
 

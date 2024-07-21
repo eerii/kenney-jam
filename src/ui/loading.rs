@@ -20,12 +20,19 @@ impl Plugin for LoadingScreenPlugin {
         app.add_sub_state::<LoadingScreenState>()
             .enable_state_scoped_entities::<LoadingScreenState>()
             .add_systems(
+                OnEnter(LoadingScreenState::Kenney),
+                init_kenney,
+            )
+            .add_systems(
                 OnEnter(LoadingScreenState::Bevy),
                 init_bevy,
             )
             .add_systems(
                 Update,
-                update_bevy.run_if(in_state(LoadingScreenState::Bevy)),
+                update_bevy.run_if(
+                    in_state(LoadingScreenState::Kenney)
+                        .or_else(in_state(LoadingScreenState::Bevy)),
+                ),
             )
             .add_systems(
                 OnEnter(LoadingScreenState::Loading),
@@ -43,8 +50,10 @@ impl Plugin for LoadingScreenPlugin {
 #[derive(SubStates, Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[source(GameState = GameState::Loading)]
 pub enum LoadingScreenState {
-    /// Shows the Made with Bevy logo
+    /// Kenney jam
     #[default]
+    Kenney,
+    /// Shows the Made with Bevy logo
     Bevy,
     /// The game still needs to load some assets after finishing the splash
     /// screens
@@ -56,7 +65,7 @@ pub enum LoadingScreenState {
 // ··········
 
 #[derive(Component)]
-struct BevySplashScreen;
+struct SplashScreen;
 
 #[derive(Component)]
 struct LoadingText;
@@ -67,6 +76,36 @@ struct SplashScreenTimer(Timer);
 // ·······
 // Systems
 // ·······
+
+fn init_kenney(
+    mut cmd: Commands,
+    root: Query<Entity, With<UiRootContainer>>,
+    assets: Res<CoreAssets>,
+) {
+    let Ok(root) = root.get_single() else { return };
+
+    cmd.ui_builder(root)
+        .column(|column| {
+            column
+                .style()
+                .width(Val::Percent(100.))
+                .align_items(AlignItems::Center)
+                .justify_content(JustifyContent::Center)
+                .row_gap(UI_GAP);
+
+            column
+                .image(assets.kenney_icon.clone())
+                .insert(SplashScreen)
+                .style()
+                .height(Val::Percent(30.));
+        })
+        .insert(StateScoped(LoadingScreenState::Kenney));
+
+    cmd.spawn((
+        SplashScreenTimer(Timer::from_seconds(1., TimerMode::Once)),
+        StateScoped(LoadingScreenState::Kenney),
+    ));
+}
 
 fn init_bevy(
     mut cmd: Commands,
@@ -86,7 +125,7 @@ fn init_bevy(
 
             column
                 .image(assets.bevy_icon.clone())
-                .insert(BevySplashScreen)
+                .insert(SplashScreen)
                 .style()
                 .height(Val::Percent(25.));
 
@@ -95,20 +134,21 @@ fn init_bevy(
                     "Made with Bevy".into(),
                     assets.font.clone(),
                 )
-                .insert(BevySplashScreen);
+                .insert(SplashScreen);
         })
         .insert(StateScoped(LoadingScreenState::Bevy));
 
     cmd.spawn((
-        SplashScreenTimer(Timer::from_seconds(2., TimerMode::Once)),
+        SplashScreenTimer(Timer::from_seconds(1., TimerMode::Once)),
         StateScoped(LoadingScreenState::Bevy),
     ));
 }
 
 fn update_bevy(
-    mut text: Query<&mut Text, With<BevySplashScreen>>,
-    mut image: Query<&mut UiImage, With<BevySplashScreen>>,
+    mut text: Query<&mut Text, With<SplashScreen>>,
+    mut image: Query<&mut UiImage, With<SplashScreen>>,
     mut timer: Query<&mut SplashScreenTimer>,
+    loading_state: Res<State<LoadingScreenState>>,
     mut next_loading_state: ResMut<NextState<LoadingScreenState>>,
     time: Res<Time>,
 ) {
@@ -116,7 +156,11 @@ fn update_bevy(
 
     let timer = timer.0.tick(time.delta());
     if timer.just_finished() {
-        next_loading_state.set(LoadingScreenState::Loading);
+        next_loading_state.set(match loading_state.get() {
+            LoadingScreenState::Kenney => LoadingScreenState::Bevy,
+            LoadingScreenState::Bevy => LoadingScreenState::Loading,
+            _ => unreachable!(),
+        });
         return;
     }
 

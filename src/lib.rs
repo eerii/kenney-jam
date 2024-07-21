@@ -51,25 +51,16 @@ pub enum GameState {
     End,
 }
 
-#[derive(SubStates, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(SubStates, Default, Debug, Clone, Eq, PartialEq, Hash)]
 #[source(GameState = GameState::Play)]
 pub enum PlayState {
     Play,
-    #[cfg(feature = "menu")]
+    #[default]
     Menu,
     ToShop,
     ToLevel,
     GameWon,
     GameOver,
-}
-
-impl Default for PlayState {
-    fn default() -> Self {
-        #[cfg(not(feature = "menu"))]
-        return Self::Play;
-        #[cfg(feature = "menu")]
-        return Self::Menu;
-    }
 }
 
 #[derive(SubStates, Debug, Default, Clone, Eq, PartialEq, Hash)]

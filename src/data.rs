@@ -113,7 +113,7 @@ pub fn max_range(level: usize) -> u32 {
 
 #[inline]
 pub fn max_battery(level: usize) -> u32 {
-    (50 + level * 25) as u32
+    (25 + level * 50) as u32
 }
 
 #[inline]
@@ -214,10 +214,15 @@ fn on_restart(
     mut next_play_state: ResMut<NextState<PlayState>>,
     mut save_data: ResMut<Persistent<SaveData>>,
     mut restart_reader: EventReader<RestartEvent>,
+    mut first: Local<bool>,
 ) {
     if restart_reader.read().next().is_some() {
         next_state.set(GameState::Play);
-        next_play_state.set(PlayState::Play);
+        if !*first {
+            *first = true
+        } else {
+            next_play_state.set(PlayState::Play);
+        }
         let battery = max_battery(save_data.battery_level);
         let _ = save_data.update(|data| {
             data.level = 0;
