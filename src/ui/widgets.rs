@@ -11,7 +11,7 @@ const BUTTON_WIDTH: Val = Val::Px(256.);
 const BUTTON_HEIGHT: Val = Val::Px(64.);
 
 const FONT_SIZE_TEXT: f32 = 20.;
-const FONT_SIZE_TITLE: f32 = 32.;
+const FONT_SIZE_TITLE: f32 = 28.;
 
 /// Base color for UI buttons
 pub const BUTTON_COLOR: Color = Color::srgb(0.478, 0.267, 0.29);

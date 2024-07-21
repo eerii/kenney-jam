@@ -4,7 +4,7 @@ use sickle_ui::prelude::*;
 use super::UI_GAP;
 use crate::{
     assets::{CoreAssets, SpriteAssets, ATLAS_SIZE},
-    data::{GameOptions, Persistent, SaveData},
+    data::{max_battery, max_range, GameOptions, Persistent, SaveData},
     enemy::Element,
     ui::{widgets::UiTextWidget, UiRootContainer},
     PlaySet, PlayState, SCALE,
@@ -38,6 +38,7 @@ impl Plugin for GuiPlugin {
 enum DisplayType {
     Connection,
     Battery,
+    Money,
     Attack(Element),
 }
 
@@ -72,6 +73,11 @@ fn init(
             index: 22 * ATLAS_SIZE.0 + 4,
             display: DisplayType::Battery,
             data: None,
+        },
+        Display {
+            index: 10 * ATLAS_SIZE.0 + 33,
+            display: DisplayType::Money,
+            data: Some(save_data.money),
         },
     ];
 
@@ -108,26 +114,34 @@ fn init(
                 .row_gap(UI_GAP);
 
             for display in displays {
-                column.spawn((
-                    ImageBundle {
-                        style: Style {
-                            width: Val::Px(16. * SCALE),
-                            height: Val::Px(16. * SCALE),
+                let data = display.data;
+                column.container(
+                    (
+                        ImageBundle {
+                            style: Style {
+                                width: Val::Px(16. * SCALE),
+                                height: Val::Px(16. * SCALE),
+                                ..default()
+                            },
+                            image: UiImage::new(sprite_assets.one_bit.clone()),
                             ..default()
                         },
-                        image: UiImage::new(sprite_assets.one_bit.clone()),
-                        ..default()
+                        TextureAtlas {
+                            layout: sprite_assets.one_bit_atlas.clone(),
+                            index: display.index,
+                        },
+                        display,
+                    ),
+                    |display| {
+                        if let Some(data) = data {
+                            display.text(format!("{}", data), assets.font.clone());
+                        }
                     },
-                    TextureAtlas {
-                        layout: sprite_assets.one_bit_atlas.clone(),
-                        index: display.index,
-                    },
-                    display,
-                ));
+                );
             }
 
             column.title(
-                format!("{}", save_data.level + 1),
+                format!("L{}", save_data.level + 1),
                 assets.font.clone(),
             );
         })
@@ -153,25 +167,29 @@ fn init(
 
             for att in attacks {
                 let data = att.data;
-                column.spawn((
-                    ImageBundle {
-                        style: Style {
-                            width: Val::Px(16. * SCALE),
-                            height: Val::Px(16. * SCALE),
+                column.container(
+                    (
+                        ImageBundle {
+                            style: Style {
+                                width: Val::Px(16. * SCALE),
+                                height: Val::Px(16. * SCALE),
+                                ..default()
+                            },
+                            image: UiImage::new(sprite_assets.one_bit.clone()),
                             ..default()
                         },
-                        image: UiImage::new(sprite_assets.one_bit.clone()),
-                        ..default()
+                        TextureAtlas {
+                            layout: sprite_assets.one_bit_atlas.clone(),
+                            index: att.index,
+                        },
+                        att,
+                    ),
+                    |display| {
+                        if let Some(data) = data {
+                            display.text(format!("{}", data), assets.font.clone());
+                        }
                     },
-                    TextureAtlas {
-                        layout: sprite_assets.one_bit_atlas.clone(),
-                        index: att.index,
-                    },
-                    att,
-                ));
-                if let Some(data) = data {
-                    column.text(format!("{}", data), assets.font.clone());
-                }
+                );
             }
         })
         .insert(StateScoped(PlayState::Play))
@@ -183,14 +201,20 @@ fn update_displays(
     mut displays: Query<(
         &mut TextureAtlas,
         Option<&mut BackgroundColor>,
+        Option<&Children>,
         &Display,
     )>,
+    mut text: Query<&mut Text>,
     save_data: Res<Persistent<SaveData>>,
 ) {
-    for (mut atlas, background, display) in displays.iter_mut() {
+    for (mut atlas, background, children, display) in displays.iter_mut() {
         let percent = match &display.display {
-            DisplayType::Connection => save_data.level as f32 / save_data.max_range as f32,
-            DisplayType::Battery => 1. - save_data.battery as f32 / save_data.max_battery as f32,
+            DisplayType::Connection => {
+                save_data.level as f32 / max_range(save_data.range_level) as f32
+            },
+            DisplayType::Battery => {
+                1. - save_data.battery as f32 / max_battery(save_data.battery_level) as f32
+            },
             DisplayType::Attack(ref element) => {
                 if let Some(mut color) = background {
                     let selected = *element == save_data.attack_selected;
@@ -202,8 +226,28 @@ fn update_displays(
                 }
                 0.
             },
+            _ => 0.,
         };
         let offset = (percent.clamp(0., 0.99) * 4.).floor() as usize;
         atlas.index = display.index + offset;
+        let Some(children) = children else { continue };
+        for child in children {
+            let Ok(mut text) = text.get_mut(*child) else { continue };
+            text.sections[0].value = match &display.display {
+                DisplayType::Money => format!("{}", save_data.money),
+                DisplayType::Attack(ref e) => match e {
+                    Element::Basic => unreachable!(),
+                    Element::Fire => format!("{}", save_data.fire_uses),
+                    Element::Water => format!("{}", save_data.water_uses),
+                    Element::Grass => format!("{}", save_data.grass_uses),
+                },
+                _ => unreachable!(),
+            };
+            if let DisplayType::Money = display.display {
+                if save_data.money >= 100 {
+                    text.sections[0].style.font_size = 14.;
+                }
+            }
+        }
     }
 }

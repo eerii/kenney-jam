@@ -9,7 +9,7 @@ use rand::{seq::SliceRandom, Rng};
 
 use crate::{
     assets::{SpriteAssets, ATLAS_SIZE},
-    data::{Persistent, SaveData},
+    data::{max_range, Persistent, SaveData},
     enemy::{get_enemy, Element},
     misc::{dir_to_vec, Direction},
     player::{Status, StatusEvent},
@@ -124,9 +124,9 @@ fn level_transition(
     next_state.set(GameState::Play);
     next_play_state.set(PlayState::Play);
     let _ = save_data.update(|data| data.level += 1);
-    if save_data.level >= save_data.max_range {
+    if save_data.level >= max_range(save_data.range_level) {
         status_writer.send(StatusEvent(Status::ConnectionEmpty));
-    } else if save_data.level + 2 >= save_data.max_range {
+    } else if save_data.level + 2 >= max_range(save_data.range_level) {
         status_writer.send(StatusEvent(Status::ConnectionLow));
     }
 }

@@ -46,6 +46,7 @@ pub enum GameState {
     LevelTransition,
     /// Upgrade shop
     Shop,
+    UpdateShop,
     /// End of the `Play` state, useful to restart the game
     End,
 }

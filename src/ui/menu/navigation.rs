@@ -144,7 +144,6 @@ fn update_focus(
             let Ok(mut color) = border.get_mut(entity) else { continue };
             *color = match focus.state() {
                 FocusState::Focused => BUTTON_COLOR.lighter(0.3),
-                FocusState::Blocked => BUTTON_COLOR.darker(0.3),
                 _ => BUTTON_COLOR,
             }
             .into();
@@ -215,7 +214,7 @@ fn handle_input(
 /// window This is a system that runs when the state is change (to avoid
 /// clicking on the unupdated menu) but can also be called as a function when
 /// the mouse moves
-fn on_mouse_move(
+pub fn on_mouse_move(
     window: Query<&Window, With<PrimaryWindow>>,
     focused: Query<Entity, With<Focused>>,
     focusables: Query<(Entity, &Node, &GlobalTransform), With<Focusable>>,

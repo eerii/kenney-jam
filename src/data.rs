@@ -62,11 +62,11 @@ impl Default for GameOptions {
 #[derive(Resource, Serialize, Deserialize)]
 pub struct SaveData {
     pub level: u32,
-    pub max_range: u32,
-    pub max_battery: u32,
     pub battery: u32,
-    pub attack: f32,
-    pub fire: u32,  // don't need level, use this as level
+    pub range_level: usize,
+    pub battery_level: usize,
+    pub attack_level: usize,
+    pub fire: u32, // don't need level, use this as level
     pub water: u32,
     pub grass: u32,
     pub fire_uses: u32,
@@ -74,19 +74,16 @@ pub struct SaveData {
     pub grass_uses: u32,
     pub attack_selected: Element,
     pub money: u32,
-    pub range_lvl: usize,
-    pub battery_lvl: usize,
-    pub attack_lvl: usize,
 }
 
 impl Default for SaveData {
     fn default() -> Self {
         Self {
             level: 0,
-            max_range: 5,
             battery: 200,
-            max_battery: 200,
-            attack: 1.,
+            range_level: 1,
+            battery_level: 1,
+            attack_level: 1,
             fire: 0,
             water: 0,
             grass: 0,
@@ -95,11 +92,23 @@ impl Default for SaveData {
             grass_uses: 0,
             attack_selected: Element::Basic,
             money: 0,
-            range_lvl: 1,
-            battery_lvl: 1,
-            attack_lvl: 0,
         }
     }
+}
+
+#[inline]
+pub fn max_range(level: usize) -> u32 {
+    (4 + level) as u32
+}
+
+#[inline]
+pub fn max_battery(level: usize) -> u32 {
+    (50 + level * 25) as u32
+}
+
+#[inline]
+pub fn attack(level: usize) -> f32 {
+    0.5 + level as f32 * 0.5
 }
 
 /// When persist is not enabled, this wrapper just serves
@@ -178,7 +187,10 @@ pub(crate) fn init_data(mut cmd: Commands) {
         .expect("failed to initialize save data");
 
     save_data.level = 0;
-    save_data.battery = save_data.max_battery;
+    save_data.battery = max_battery(save_data.battery_level);
+    save_data.fire_uses = save_data.fire;
+    save_data.water_uses = save_data.water;
+    save_data.grass_uses = save_data.grass;
 
     cmd.insert_resource(save_data);
 }
@@ -198,10 +210,13 @@ fn on_restart(
     if restart_reader.read().next().is_some() {
         next_state.set(GameState::Play);
         next_play_state.set(PlayState::Play);
-        let battery = save_data.max_battery;
+        let battery = max_battery(save_data.battery_level);
         let _ = save_data.update(|data| {
             data.level = 0;
             data.battery = battery;
+            data.fire_uses = data.fire;
+            data.water_uses = data.water;
+            data.grass_uses = data.grass;
         });
     }
 }

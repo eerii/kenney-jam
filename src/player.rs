@@ -7,7 +7,7 @@ use rand::Rng;
 
 use crate::{
     assets::{SoundAssets, SpriteAssets},
-    data::{Persistent, SaveData},
+    data::{max_battery, max_range, Persistent, SaveData},
     enemy::{DamageEvent, Enemy},
     input::{Action, ActionState},
     misc::{dir_to_vec, Direction, MoveTo},
@@ -123,8 +123,7 @@ fn move_player(
 
     // Rooms left
     // 3 - 10%, 2 - 20%, 1 - 35%, 0 or more- 50%
-    let rooms_left = save_data
-        .max_range
+    let rooms_left = max_range(save_data.range_level)
         .saturating_sub(save_data.level)
         .clamp(0, 4);
     let random_input = LOW_CONNECTION_PERCENTS[rooms_left as usize] > rand::random::<f32>();
@@ -197,7 +196,7 @@ fn move_player(
 }
 
 fn check_player(save_data: Res<Persistent<SaveData>>, mut status_writer: EventWriter<StatusEvent>) {
-    if save_data.battery < save_data.max_battery / 8 {
+    if save_data.battery < max_battery(save_data.battery_level) / 8 {
         status_writer.send(StatusEvent(Status::BatteryLow));
     }
     if save_data.battery == 0 {

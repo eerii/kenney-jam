@@ -5,7 +5,7 @@ use rand::Rng;
 
 use crate::{
     assets::{SoundAssets, ATLAS_SIZE},
-    data::SaveData,
+    data::{attack, SaveData},
     misc::MIN_TURN_TIMER,
     PlaySet, TurnState,
 };
@@ -116,11 +116,11 @@ fn on_damage(
         if let Ok(mut enemy) = enemies.get_mut(*entity) {
             enemy.health -= match enemy.elem {
                 Element::Basic => match save_data.attack_selected {
-                    Element::Basic => save_data.attack,
+                    Element::Basic => attack(save_data.attack_level),
                     Element::Fire => {
                         if save_data.fire_uses > 0 {
                             save_data.fire_uses -= 1;
-                            save_data.attack
+                            attack(save_data.attack_level)
                         } else {
                             0.
                         }
@@ -128,7 +128,7 @@ fn on_damage(
                     Element::Water => {
                         if save_data.water_uses > 0 {
                             save_data.water_uses -= 1;
-                            save_data.attack
+                            attack(save_data.attack_level)
                         } else {
                             0.
                         }
@@ -136,18 +136,18 @@ fn on_damage(
                     Element::Grass => {
                         if save_data.grass_uses > 0 {
                             save_data.grass_uses -= 1;
-                            save_data.attack
+                            attack(save_data.attack_level)
                         } else {
                             0.
                         }
                     },
                 },
                 Element::Fire => match save_data.attack_selected {
-                    Element::Basic => save_data.attack,
+                    Element::Basic => attack(save_data.attack_level),
                     Element::Fire => {
                         if save_data.fire_uses > 0 {
                             save_data.fire_uses -= 1;
-                            save_data.attack
+                            attack(save_data.attack_level)
                         } else {
                             0.
                         }
@@ -155,7 +155,7 @@ fn on_damage(
                     Element::Water => {
                         if save_data.water_uses > 0 {
                             save_data.water_uses -= 1;
-                            save_data.attack * 1.5
+                            attack(save_data.attack_level) * 1.5
                         } else {
                             0.
                         }
@@ -163,24 +163,24 @@ fn on_damage(
                     Element::Grass => {
                         if save_data.grass_uses > 0 {
                             save_data.grass_uses -= 1;
-                            save_data.battery -= save_data.attack as u32;
+                            save_data.battery -= attack(save_data.attack_level) as u32;
                         }
                         0.
                     },
                 },
                 Element::Water => match save_data.attack_selected {
-                    Element::Basic => save_data.attack,
+                    Element::Basic => attack(save_data.attack_level),
                     Element::Fire => {
                         if save_data.fire_uses > 0 {
                             save_data.fire_uses -= 1;
-                            save_data.battery -= save_data.attack as u32;
+                            save_data.battery -= attack(save_data.attack_level) as u32;
                         }
                         0.
                     },
                     Element::Water => {
                         if save_data.water_uses > 0 {
                             save_data.water_uses -= 1;
-                            save_data.attack
+                            attack(save_data.attack_level)
                         } else {
                             0.
                         }
@@ -188,18 +188,18 @@ fn on_damage(
                     Element::Grass => {
                         if save_data.grass_uses > 0 {
                             save_data.grass_uses -= 1;
-                            save_data.attack * 1.5
+                            attack(save_data.attack_level) * 1.5
                         } else {
                             0.
                         }
                     },
                 },
                 Element::Grass => match save_data.attack_selected {
-                    Element::Basic => save_data.attack,
+                    Element::Basic => attack(save_data.attack_level),
                     Element::Fire => {
                         if save_data.fire_uses > 0 {
                             save_data.fire_uses -= 1;
-                            save_data.attack * 1.5
+                            attack(save_data.attack_level) * 1.5
                         } else {
                             0.
                         }
@@ -207,14 +207,14 @@ fn on_damage(
                     Element::Water => {
                         if save_data.water_uses > 0 {
                             save_data.water_uses -= 1;
-                            save_data.battery -= save_data.attack as u32;
+                            save_data.battery -= attack(save_data.attack_level) as u32;
                         }
                         0.
                     },
                     Element::Grass => {
                         if save_data.grass_uses > 0 {
                             save_data.grass_uses -= 1;
-                            save_data.attack
+                            attack(save_data.attack_level)
                         } else {
                             0.
                         }
