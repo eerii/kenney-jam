@@ -288,7 +288,7 @@ fn confirm_game_won(
                 column.text(
                     format!(
                         "and perishing {} times",
-                        save_data.deaths,
+                        save_data.deaths.saturating_sub(1),
                     ),
                     assets.font.clone(),
                 );

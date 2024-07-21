@@ -210,7 +210,10 @@ fn update_displays(
     for (mut atlas, background, children, display) in displays.iter_mut() {
         let percent = match &display.display {
             DisplayType::Connection => {
-                save_data.level as f32 / max_range(save_data.range_level) as f32
+                1. - max_range(save_data.range_level)
+                    .saturating_sub(save_data.level)
+                    .clamp(0, 4) as f32
+                    / 4.
             },
             DisplayType::Battery => {
                 1. - save_data.battery as f32 / max_battery(save_data.battery_level) as f32

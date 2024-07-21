@@ -130,10 +130,7 @@ fn init_bevy(
                 .height(Val::Percent(25.));
 
             column
-                .title(
-                    "Made with Bevy".into(),
-                    assets.font.clone(),
-                )
+                .title("Bevy".into(), assets.font.clone())
                 .insert(SplashScreen);
         })
         .insert(StateScoped(LoadingScreenState::Bevy));

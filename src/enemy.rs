@@ -5,26 +5,26 @@ use rand::Rng;
 
 use crate::{
     assets::{SoundAssets, ATLAS_SIZE},
-    data::{attack, SaveData},
+    data::{attack, max_battery, SaveData},
     misc::{dir_to_vec, Direction, MoveTo, MIN_TURN_TIMER},
     player::Player,
     tilemap::{tile_to_pos, Tile, Tilemap},
     PlaySet, PlayState, TurnState,
 };
 
-const WEIGHTS: [[u32; 6]; 12] = [
-    [80, 10, 00, 00, 00, 10],
-    [65, 20, 5, 00, 00, 10],
-    [35, 30, 25, 00, 00, 20],
-    [5, 40, 30, 5, 00, 20],
-    [00, 20, 45, 25, 00, 10],
-    [00, 10, 20, 50, 10, 10],
-    [00, 00, 5, 55, 20, 20],
-    [00, 00, 00, 60, 15, 20],
-    [00, 00, 00, 40, 35, 25],
-    [00, 00, 00, 20, 50, 30],
-    [00, 00, 00, 10, 70, 20],
-    [00, 00, 00, 5, 85, 10],
+const WEIGHTS: [[u32; 7]; 12] = [
+    [80, 10, 00, 00, 00, 10, 0],
+    [65, 20, 5, 00, 00, 10, 0],
+    [35, 30, 25, 00, 00, 20, 0],
+    [5, 40, 30, 5, 00, 20, 0],
+    [00, 20, 45, 25, 00, 9, 1],
+    [00, 10, 20, 50, 10, 9, 1],
+    [00, 00, 5, 55, 20, 19, 1],
+    [00, 00, 00, 60, 15, 19, 1],
+    [00, 00, 00, 40, 35, 24, 1],
+    [00, 00, 00, 20, 50, 29, 1],
+    [00, 00, 00, 10, 70, 19, 1],
+    [00, 00, 00, 5, 85, 9, 1],
 ];
 
 // ······
@@ -59,6 +59,7 @@ pub enum EnemyType {
     YoungOld, // for both kids and elders
     Man,
     Money,
+    Battery,
     EndGame, // This is not an enemy, its a jewel
 }
 
@@ -122,6 +123,11 @@ fn on_damage(
             if let EnemyType::EndGame = enemy.typ {
                 next_play_state.set(PlayState::GameWon);
                 return;
+            }
+
+            if let EnemyType::Battery = enemy.typ {
+                save_data.battery = (save_data.battery + max_battery(save_data.battery_level) / 4)
+                    .clamp(0, max_battery(save_data.battery_level));
             }
 
             enemy.health -= match enemy.elem {
@@ -242,7 +248,7 @@ fn on_damage(
                         EnemyType::YoungOld | EnemyType::Man => {
                             sound_assets.man[rng.gen_range(0..2)].clone()
                         },
-                        EnemyType::EndGame | EnemyType::Money => {
+                        EnemyType::EndGame | EnemyType::Money | EnemyType::Battery => {
                             sound_assets.upgrades[rng.gen_range(0..2)].clone()
                         },
                     },
@@ -257,7 +263,7 @@ fn on_damage(
                     EnemyType::Money => {
                         rng.gen_range((save_data.level + 2)..(save_data.level + 1) * 4)
                     },
-                    EnemyType::EndGame => 0,
+                    EnemyType::EndGame | EnemyType::Battery => 0,
                 };
                 if !matches!(enemy.typ, EnemyType::Money) {
                     save_data.enemies_killed += 1;
@@ -306,11 +312,9 @@ fn update_enemies(
 
     let mut rng = rand::thread_rng();
     for (entity, mut enemy, move_to) in enemies.iter_mut() {
-        if let EnemyType::EndGame = enemy.typ {
-            continue;
-        };
-        if let EnemyType::Money = enemy.typ {
-            continue;
+        match enemy.typ {
+            EnemyType::EndGame | EnemyType::Money | EnemyType::Battery => continue,
+            _ => {},
         };
 
         if move_to.is_some() {
@@ -387,6 +391,7 @@ pub fn get_enemy(pos: IVec2, level: u32, unique: &mut bool) -> (Enemy, usize) {
         ),
         EnemyType::Man => (26 + rng.gen_range(0..6), 5.),
         EnemyType::Money => (10 * ATLAS_SIZE.0 + 33, 0.),
+        EnemyType::Battery => (22 * ATLAS_SIZE.0 + 8, 0.),
         _ => unreachable!(),
     };
 
@@ -394,7 +399,10 @@ pub fn get_enemy(pos: IVec2, level: u32, unique: &mut bool) -> (Enemy, usize) {
         Enemy {
             pos,
             health,
-            elem: if let EnemyType::Money = typ { Element::Basic } else { enemy_elem() },
+            elem: match typ {
+                EnemyType::Money | EnemyType::Battery => Element::Basic,
+                _ => enemy_elem(),
+            },
             typ,
         },
         index,
@@ -418,7 +426,8 @@ fn enemy_type(level: u32) -> EnemyType {
         2 => EnemyType::Dog,
         3 => EnemyType::YoungOld,
         4 => EnemyType::Man,
-        _ => EnemyType::Money,
+        5 => EnemyType::Money,
+        _ => EnemyType::Battery,
     }
 }
 
