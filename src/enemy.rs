@@ -6,7 +6,9 @@ use rand::Rng;
 use crate::{
     assets::{SoundAssets, ATLAS_SIZE},
     data::{attack, SaveData},
-    misc::MIN_TURN_TIMER,
+    misc::{dir_to_vec, Direction, MoveTo, MIN_TURN_TIMER},
+    player::Player,
+    tilemap::{tile_to_pos, Tile, Tilemap},
     PlaySet, TurnState,
 };
 
@@ -262,6 +264,10 @@ fn enemy_turn(mut cmd: Commands) {
 fn update_enemies(
     mut cmd: Commands,
     mut timer: Query<(Entity, &mut EnemyTurn)>,
+    mut enemies: Query<(Entity, &mut Enemy, Option<&MoveTo>)>,
+    player: Query<&Player>,
+    mut tiles: Query<&mut Tile>,
+    tilemap: Res<Tilemap>,
     time: Res<Time>,
     mut next_turn_state: ResMut<NextState<TurnState>>,
 ) {
@@ -270,6 +276,47 @@ fn update_enemies(
     if timer.just_finished() {
         next_turn_state.set(TurnState::Player);
         cmd.entity(entity).despawn();
+    }
+
+    if timer.fraction() < 0.25 {
+        return;
+    };
+
+    let Ok(player) = player.get_single() else {
+        return;
+    };
+
+    let mut rng = rand::thread_rng();
+    for (entity, mut enemy, move_to) in enemies.iter_mut() {
+        if move_to.is_some() {
+            continue;
+        };
+        if rng.gen::<f32>() < 0.5 {
+            continue;
+        };
+
+        let dir: Direction = rng.gen();
+        let pos = enemy.pos + dir_to_vec(&dir, 1.).as_ivec2();
+
+        let Some(tile) = tilemap.get_tile(pos) else { continue };
+        let Some(prev_tile) = tilemap.get_tile(enemy.pos) else { continue };
+        let Ok(mut tile) = tiles.get_mut(tile) else { continue };
+        let Tile::Ground = *tile else { continue };
+
+        cmd.entity(entity).insert(MoveTo::new(
+            tile_to_pos(enemy.pos),
+            tile_to_pos(pos),
+            if pos == player.pos { Some(dir) } else { None },
+        ));
+
+        if pos != player.pos {
+            *tile = Tile::Enemy;
+
+            enemy.pos = pos;
+
+            let Ok(mut prev_tile) = tiles.get_mut(prev_tile) else { continue };
+            *prev_tile = Tile::Ground;
+        }
     }
 }
 
