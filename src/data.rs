@@ -74,6 +74,9 @@ pub struct SaveData {
     pub grass_uses: u32,
     pub attack_selected: Element,
     pub money: u32,
+    pub enemies_killed: u32,
+    pub levels_completed: u32,
+    pub deaths: u32,
 }
 
 impl Default for SaveData {
@@ -92,6 +95,9 @@ impl Default for SaveData {
             grass_uses: 0,
             attack_selected: Element::Basic,
             money: 0,
+            enemies_killed: 0,
+            levels_completed: 0,
+            deaths: 0,
         }
     }
 }

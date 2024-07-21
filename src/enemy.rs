@@ -242,6 +242,7 @@ fn on_damage(
                     EnemyType::YoungOld => rng.gen_range(18..21),
                     EnemyType::Man => rng.gen_range(24..27),
                 };
+                save_data.enemies_killed += 1;
             }
         }
 
