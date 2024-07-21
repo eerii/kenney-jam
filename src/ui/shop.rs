@@ -233,10 +233,6 @@ fn handle_buttons(
                 },
                 ShopButton::Plus(upgrade) => match upgrade {
                     Upgrade::Range => {
-                        println!(
-                            "Range: {}",
-                            PRICE[save_data.range_level]
-                        );
                         if save_data.range_level < 10
                             && save_data.money >= PRICE[save_data.range_level]
                         {
@@ -245,7 +241,6 @@ fn handle_buttons(
                         }
                     },
                     Upgrade::Battery => {
-                        println!("Battery");
                         if save_data.battery_level < 10
                             && save_data.money >= PRICE[save_data.battery_level]
                         {
@@ -254,7 +249,6 @@ fn handle_buttons(
                         }
                     },
                     Upgrade::Basic => {
-                        println!("Basic");
                         if save_data.attack_level < 10
                             && save_data.money >= PRICE[save_data.attack_level]
                         {
@@ -263,10 +257,6 @@ fn handle_buttons(
                         }
                     },
                     Upgrade::Fire => {
-                        println!(
-                            "Fire: {}",
-                            PRICE[save_data.fire as usize]
-                        );
                         let lvl = save_data.fire as usize;
                         if save_data.money >= PRICE[lvl] {
                             save_data.money -= PRICE[lvl];
@@ -275,7 +265,6 @@ fn handle_buttons(
                     },
                     Upgrade::Water => {
                         let lvl = save_data.water as usize;
-                        println!("Water: {}", PRICE[lvl]);
                         if save_data.money >= PRICE[lvl] {
                             save_data.money -= PRICE[lvl];
                             save_data.water += 1;
@@ -283,7 +272,6 @@ fn handle_buttons(
                     },
                     Upgrade::Grass => {
                         let lvl = save_data.grass as usize;
-                        println!("Grass: {}", PRICE[lvl]);
                         if save_data.money >= PRICE[lvl] {
                             save_data.money -= PRICE[lvl];
                             save_data.grass += 1;
@@ -292,35 +280,30 @@ fn handle_buttons(
                 },
                 ShopButton::Minus(upgrade) => match upgrade {
                     Upgrade::Range => {
-                        println!("Range");
                         if save_data.range_level > 0 {
                             save_data.range_level -= 1;
                             save_data.money += PRICE[save_data.range_level];
                         }
                     },
                     Upgrade::Battery => {
-                        println!("Battery");
                         if save_data.battery_level > 0 {
                             save_data.battery_level -= 1;
                             save_data.money += PRICE[save_data.battery_level];
                         }
                     },
                     Upgrade::Basic => {
-                        println!("Basic");
                         if save_data.attack_level > 0 {
                             save_data.attack_level -= 1;
                             save_data.money += PRICE[save_data.attack_level];
                         }
                     },
                     Upgrade::Fire => {
-                        println!("Fire");
                         if save_data.fire > 0 {
                             save_data.fire -= 1;
                             save_data.money += PRICE[save_data.fire as usize];
                         }
                     },
                     Upgrade::Water => {
-                        println!("Water");
                         if save_data.water > 0 {
                             save_data.water -= 1;
                             save_data.money += PRICE[save_data.water as usize];
