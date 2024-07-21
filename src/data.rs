@@ -118,7 +118,7 @@ pub fn max_battery(level: usize) -> u32 {
 
 #[inline]
 pub fn attack(level: usize) -> f32 {
-    0.5 + level as f32 * 0.5
+    0.3 + level as f32 * 0.3
 }
 
 /// When persist is not enabled, this wrapper just serves

@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{assets::SoundAssets, PlayState};
+use crate::{assets::SoundAssets, GameState, PlayState};
 
 // ······
 // Plugin
@@ -24,14 +24,14 @@ impl Plugin for AudioPlugin {
             .add_systems(OnExit(PlayState::Menu), exit_menu)
             .add_systems(
                 OnExit(PlayState::Play),
-                exit_play.run_if(in_state(crate::GameState::Play)),
+                exit_play.run_if(in_state(GameState::Play)),
             );
 
         app.add_systems(OnEnter(PlayState::Play), init_play)
             .add_systems(
                 Update,
                 (
-                    detect_audio_removal.run_if(in_state(PlayState::Play)),
+                    detect_audio_removal.run_if(in_state(GameState::Play)),
                     fade_out,
                 ),
             );
@@ -108,9 +108,13 @@ fn exit_play(
 fn detect_audio_removal(
     mut cmd: Commands,
     assets: Res<SoundAssets>,
+    ambient: Query<&AmbientMusic>,
     mut removals: RemovedComponents<AmbientMusic>,
 ) {
-    for _ in removals.read() {
+    if ambient.iter().next().is_some() {
+        return;
+    };
+    if removals.read().next().is_some() {
         let next = rand::random::<usize>() % (assets.ambient_music.len() - 1) + 1;
         cmd.spawn((
             AudioBundle {

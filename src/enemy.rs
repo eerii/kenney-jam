@@ -386,7 +386,7 @@ pub fn get_enemy(pos: IVec2, level: u32, unique: &mut bool) -> (Enemy, usize) {
             4.,
         ),
         EnemyType::Man => (26 + rng.gen_range(0..6), 5.),
-        EnemyType::Money => (10 * ATLAS_SIZE.0 + 33, 0.5),
+        EnemyType::Money => (10 * ATLAS_SIZE.0 + 33, 0.),
         _ => unreachable!(),
     };
 
