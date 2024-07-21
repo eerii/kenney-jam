@@ -512,7 +512,13 @@ fn enemy_type(level: u32) -> EnemyType {
         3 => EnemyType::YoungOld,
         4 => EnemyType::Man,
         5 => EnemyType::Money,
-        _ => EnemyType::Battery,
+        _ => {
+            if level > 5 && level <= 6 {
+                EnemyType::Battery
+            } else {
+                EnemyType::Money
+            }
+        },
     }
 }
 

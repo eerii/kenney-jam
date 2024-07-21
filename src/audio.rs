@@ -71,7 +71,7 @@ fn init_play(
     match ambient.get_single() {
         Ok((entity, ambient)) => {
             ambient.play();
-            ambient.set_volume(1.);
+            ambient.set_volume(1.5);
             cmd.entity(entity).remove::<FadeOut>();
         },
         Err(_) => {
@@ -80,7 +80,7 @@ fn init_play(
                     source: assets.ambient_music.first().unwrap().clone(),
                     settings: PlaybackSettings {
                         mode: PlaybackMode::Despawn,
-                        volume: Volume::new(1.),
+                        volume: Volume::new(1.5),
                         ..default()
                     },
                 },
@@ -121,7 +121,7 @@ fn detect_audio_removal(
                 source: assets.ambient_music[next].clone(),
                 settings: PlaybackSettings {
                     mode: PlaybackMode::Despawn,
-                    volume: Volume::new(1.),
+                    volume: Volume::new(1.5),
                     ..default()
                 },
             },
@@ -137,7 +137,7 @@ fn init_menu(mut cmd: Commands, assets: Res<SoundAssets>) {
             source: assets.main_menu.clone(),
             settings: PlaybackSettings {
                 mode: PlaybackMode::Loop,
-                volume: Volume::new(1.),
+                volume: Volume::new(1.5),
                 ..default()
             },
         },
